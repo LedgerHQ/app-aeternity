@@ -38,7 +38,7 @@ ifeq ($(CHAIN),ethereum)
 #APP_LOAD_PARAMS += --path "44'/60'"
 APP_LOAD_PARAMS += --path "44'"
 DEFINES += CHAINID_UPCASE=\"ETHEREUM\" CHAINID_COINNAME=\"ETH\" CHAIN_KIND=CHAIN_KIND_ETHEREUM CHAIN_ID=0
-APPNAME = "Ethereum"
+APPNAME = "Aeternity"
 DEFINES_LIB=
 APP_LOAD_FLAGS=--appFlags 0x840
 else ifeq ($(CHAIN),ellaism)
