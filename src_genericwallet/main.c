@@ -98,7 +98,8 @@ typedef struct publicKeyContext_t {
 typedef struct transactionContext_t {
     uint8_t pathLength;
     uint32_t bip32Path[MAX_BIP32_PATH];
-    uint8_t hash[32];
+    uint8_t *data;
+    uint8_t dataLength;
 } transactionContext_t;
 
 typedef struct messageSigningContext_t {
@@ -561,18 +562,18 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
     cx_ecfp_private_key_t privateKey;
     uint32_t tx = 0;
     uint8_t rLength, sLength, rOffset, sOffset;
-    uint32_t v = getV(&tmpContent.txContent);
-    os_perso_derive_node_bip32(CX_CURVE_256K1, tmpCtx.transactionContext.bip32Path,
+    uint32_t v = 0;
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.transactionContext.bip32Path,
                                tmpCtx.transactionContext.pathLength,
                                privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32,
+    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32,
                                  &privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     unsigned int info = 0;    
     signatureLength =
-        cx_ecdsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA256,
-                      tmpCtx.transactionContext.hash,
-                      sizeof(tmpCtx.transactionContext.hash), signature, &info);
+        cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
+                      tmpCtx.transactionContext.data,
+                      tmpCtx.transactionContext.dataLength, NULL, 0, signature, &info);
     os_memset(&privateKey, 0, sizeof(privateKey));    
     // Parity is present in the sequence tag in the legacy API
     if (tmpContent.txContent.vLength == 0) {
@@ -590,13 +591,7 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
     if (info & CX_ECCINFO_xGTn) {
       G_io_apdu_buffer[0] += 2;
     }
-    rLength = signature[3];
-    sLength = signature[4 + rLength + 1];
-    rOffset = (rLength == 33 ? 1 : 0);
-    sOffset = (sLength == 33 ? 1 : 0);
-    os_memmove(G_io_apdu_buffer + 1, signature + 4 + rOffset, 32);
-    os_memmove(G_io_apdu_buffer + 1 + 32, signature + 4 + rLength + 2 + sOffset,
-               32);
+    os_memmove(G_io_apdu_buffer + 1, signature, 64);
     tx = 65;
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
@@ -1138,124 +1133,12 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 }
 
 void finalizeParsing(bool direct) {
-  uint256_t gasPrice, startGas, uint256;
-  uint32_t i;
-  uint8_t address[FULL_ADDRESS_LENGTH - 3];
-  uint8_t decimals = WEI_TO_ETHER;
-  uint8_t *ticker = PIC(chainConfig->coinName);
-  uint8_t *feeTicker = PIC(chainConfig->coinName);
-  uint8_t tickerOffset = 0;
-
-  // Verify the chain
-  if (chainConfig->chainId != 0) {
-    uint32_t v = getV(&tmpContent.txContent);
-    if (chainConfig->chainId != v) {
-        PRINTF("Invalid chainId %d expected %d\n", v, chainConfig->chainId);
-        if (direct) {
-            THROW(0x6A80);
-        }
-        else {
-            io_seproxyhal_send_status(0x6A80);
-            ui_idle();
-            return;
-        }
-    }
-  }
-  // Store the hash
-  cx_hash((cx_hash_t *)&sha3, CX_LAST, tmpCtx.transactionContext.hash, 0, tmpCtx.transactionContext.hash);
-    // If there is a token to process, check if it is well known
-    if (tokenProvisioned) {
-        tokenDefinition_t *currentToken = getKnownToken();
-        if (currentToken != NULL) {
-            dataPresent = false;
-            decimals = currentToken->decimals;
-            ticker = currentToken->ticker;
-            tmpContent.txContent.destinationLength = 20;
-            os_memmove(tmpContent.txContent.destination, dataContext.tokenContext.data + 4 + 12, 20);
-            os_memmove(tmpContent.txContent.value.value, dataContext.tokenContext.data + 4 + 32, 32);
-            tmpContent.txContent.value.length = 32;
-        }
-    }  
-    else {
-      if (dataPresent && !N_storage.dataAllowed) {
-          PRINTF("Data field forbidden\n");
-          if (direct) {
-            THROW(0x6A80);
-          }
-          else {
-            io_seproxyhal_send_status(0x6A80);
-            ui_idle();
-            return;
-          }
-      } 
-    }
-  // Add address
-  if (tmpContent.txContent.destinationLength != 0) {
-    getEthAddressStringFromBinary(tmpContent.txContent.destination, address, &sha3);
-    /*
-    addressSummary[0] = '0';
-    addressSummary[1] = 'x';
-    os_memmove((unsigned char *)(addressSummary + 2), address, 4);
-    os_memmove((unsigned char *)(addressSummary + 6), "...", 3);
-    os_memmove((unsigned char *)(addressSummary + 9), address + 40 - 4, 4);
-    addressSummary[13] = '\0';
-    */
-
-    strings.common.fullAddress[0] = 'a';
-    strings.common.fullAddress[1] = 'k';
-    strings.common.fullAddress[2] = '_';
-    os_memmove((unsigned char *)strings.common.fullAddress+3, address, strlen(address));
-    strings.common.fullAddress[strlen(address) + 3] = '\0';
-  }
-  else 
-  {
-    os_memmove((void*)addressSummary, CONTRACT_ADDRESS, sizeof(CONTRACT_ADDRESS));
-    strcpy(strings.common.fullAddress, "Contract");
-  }
-  // Add amount in ethers or tokens
-  convertUint256BE(tmpContent.txContent.value.value, tmpContent.txContent.value.length, &uint256);
-  tostring256(&uint256, 10, (char *)(G_io_apdu_buffer + 100), 100);
-  i = 0;
-  while (G_io_apdu_buffer[100 + i]) {
-    i++;
-  }
-  adjustDecimals((char *)(G_io_apdu_buffer + 100), i, (char *)G_io_apdu_buffer, 100, decimals);
-  i = 0;
-    tickerOffset = 0;
-    while (ticker[tickerOffset]) {
-        strings.common.fullAmount[tickerOffset] = ticker[tickerOffset];
-        tickerOffset++;
-    }
-    while (G_io_apdu_buffer[i]) {
-        strings.common.fullAmount[tickerOffset + i] = G_io_apdu_buffer[i];
-        i++;
-    }  
-  strings.common.fullAmount[tickerOffset + i] = '\0';
-  // Compute maximum fee
-  convertUint256BE(tmpContent.txContent.gasprice.value, tmpContent.txContent.gasprice.length, &gasPrice);
-  convertUint256BE(tmpContent.txContent.startgas.value, tmpContent.txContent.startgas.length, &startGas);
-  mul256(&gasPrice, &startGas, &uint256);
-  tostring256(&uint256, 10, (char *)(G_io_apdu_buffer + 100), 100);
-  i = 0;
-  while (G_io_apdu_buffer[100 + i]) {
-    i++;
-  }
-  adjustDecimals((char *)(G_io_apdu_buffer + 100), i, (char *)G_io_apdu_buffer, 100, WEI_TO_ETHER);
-  i = 0;
-  tickerOffset=0;
-  while (feeTicker[tickerOffset]) {
-      strings.common.maxFee[tickerOffset] = feeTicker[tickerOffset];
-      tickerOffset++;
-  }
-  tickerOffset++;
-  while (G_io_apdu_buffer[i]) {
-    strings.common.maxFee[tickerOffset + i] = G_io_apdu_buffer[i];
-    i++;
-  }
-  strings.common.maxFee[tickerOffset + i] = '\0';
   ux_step = 0;
   ux_step_count = 5;
-  UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);   
+  strings.common.maxFee[0] = '\0';
+  strings.common.fullAddress[0] = '\0';
+  strings.common.fullAmount[0] = '\0';
+  UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
 }
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
@@ -1281,6 +1164,8 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
     dataPresent = false;
     tokenProvisioned = false;
     initTx(&txContext, &sha3, &tmpContent.txContent, customProcessor, NULL);
+    tmpCtx.transactionContext.dataLength = dataLength;
+    tmpCtx.transactionContext.data = workBuffer;
   } 
   else 
   if (p1 != P1_MORE) {
@@ -1293,26 +1178,10 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
     PRINTF("Parser not initialized\n");
     THROW(0x6985);
   }
-  txResult = processTx(&txContext, workBuffer, dataLength, (chainConfig->kind == CHAIN_KIND_WANCHAIN ? TX_FLAG_TYPE : 0));
-  switch (txResult) {
-    case USTREAM_SUSPENDED:
-      break;
-    case USTREAM_FINISHED:
-      break;
-    case USTREAM_PROCESSING:
-      THROW(0x9000);
-    case USTREAM_FAULT:
-      THROW(0x6A80);
-    default:
-      PRINTF("Unexpected parser status\n");
-      THROW(0x6A80);
-  }
 
   *flags |= IO_ASYNCH_REPLY;
 
-  if (txResult == USTREAM_FINISHED) {
-    finalizeParsing(true);
-  }  
+  finalizeParsing(true);
 }
 
 void handleGetAppConfiguration(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
