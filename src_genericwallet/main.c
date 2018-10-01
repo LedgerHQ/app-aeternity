@@ -20,6 +20,7 @@
 #include "stdbool.h"
 #include "ethUstream.h"
 #include "ethUtils.h"
+#include "aeUtils.h"
 #include "uint256.h"
 #include "tokens.h"
 #include "chainConfig.h"
@@ -73,6 +74,8 @@ void finalizeParsing(bool);
 
 #define WEI_TO_ETHER 18
 
+#define FULL_ADDRESS_LENGTH 54
+
 static const uint8_t const TOKEN_TRANSFER_ID[] = { 0xa9, 0x05, 0x9c, 0xbb };
 typedef struct tokenContext_t {
     uint8_t data[4 + 32 + 32];
@@ -87,7 +90,7 @@ typedef struct rawDataContext_t {
 
 typedef struct publicKeyContext_t {
     cx_ecfp_public_key_t publicKey;
-    uint8_t address[41];
+    uint8_t address[FULL_ADDRESS_LENGTH - 3];
     uint8_t chainCode[32];
     bool getChaincode;
 } publicKeyContext_t;
@@ -144,7 +147,7 @@ typedef struct internalStorage_t {
 } internalStorage_t;
 
 typedef struct strData_t {
-    char fullAddress[43];
+    char fullAddress[FULL_ADDRESS_LENGTH];
     char fullAmount[50];
     char maxFee[50];
 } strData_t;
@@ -795,9 +798,10 @@ uint32_t set_result_get_publicKey() {
     G_io_apdu_buffer[tx++] = 65;
     os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.publicKey.W, 65);
     tx += 65;
-    G_io_apdu_buffer[tx++] = 40;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, 40);
-    tx += 40;
+    uint8_t address_size = strlen(tmpCtx.publicKeyContext.address);
+    G_io_apdu_buffer[tx++] = address_size;
+    os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, address_size);
+    tx += address_size;
     if (tmpCtx.publicKeyContext.getChaincode) {
       os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.chainCode, 32);
       tx += 32;
@@ -1107,7 +1111,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
   cx_ecfp_generate_pair(CX_CURVE_Ed25519, &tmpCtx.publicKeyContext.publicKey, &privateKey, 1);
   os_memset(&privateKey, 0, sizeof(privateKey));
   os_memset(privateKeyData, 0, sizeof(privateKeyData));
-  getEthAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address, &sha3);
+  getAeAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address);
   if (p1 == P1_NON_CONFIRM) {
     *tx = set_result_get_publicKey();
     THROW(0x9000);
@@ -1125,7 +1129,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 
     // prepare for a UI based reply
 
-    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "0x%.*s", 40, tmpCtx.publicKeyContext.address);
+    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.publicKeyContext.address);
     ux_step = 0;
     ux_step_count = 2;
     UX_DISPLAY(ui_address_nanos, ui_address_prepro);                    
@@ -1136,7 +1140,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 void finalizeParsing(bool direct) {
   uint256_t gasPrice, startGas, uint256;
   uint32_t i;
-  uint8_t address[41];
+  uint8_t address[FULL_ADDRESS_LENGTH - 3];
   uint8_t decimals = WEI_TO_ETHER;
   uint8_t *ticker = PIC(chainConfig->coinName);
   uint8_t *feeTicker = PIC(chainConfig->coinName);
@@ -1197,10 +1201,11 @@ void finalizeParsing(bool direct) {
     addressSummary[13] = '\0';
     */
 
-    strings.common.fullAddress[0] = '0';
-    strings.common.fullAddress[1] = 'x';
-    os_memmove((unsigned char *)strings.common.fullAddress+2, address, 40);
-    strings.common.fullAddress[42] = '\0';
+    strings.common.fullAddress[0] = 'a';
+    strings.common.fullAddress[1] = 'k';
+    strings.common.fullAddress[2] = '_';
+    os_memmove((unsigned char *)strings.common.fullAddress+3, address, strlen(address));
+    strings.common.fullAddress[strlen(address) + 3] = '\0';
   }
   else 
   {
