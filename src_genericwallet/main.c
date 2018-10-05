@@ -75,6 +75,7 @@ void finalizeParsing(bool);
 #define WEI_TO_ETHER 18
 
 #define FULL_ADDRESS_LENGTH 54
+#define BIP32_PATH 5
 
 static const uint8_t const TOKEN_TRANSFER_ID[] = { 0xa9, 0x05, 0x9c, 0xbb };
 typedef struct tokenContext_t {
@@ -174,6 +175,9 @@ static const char const SIGN_MAGIC[] = "\x19"
 const unsigned char hex_digits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+const uint32_t HARDENED_OFFSET = 0x80000000;
+const uint32_t derivePath[BIP32_PATH] = {44 | HARDENED_OFFSET, 457 | HARDENED_OFFSET, 0 | HARDENED_OFFSET,
+                                         0 | HARDENED_OFFSET, 0 | HARDENED_OFFSET};
 chain_config_t *chainConfig;                                    
 
 void array_hexstr(char *strbuf, const void *bin, unsigned int len) {
@@ -561,8 +565,6 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
     uint8_t signatureLength;
     cx_ecfp_private_key_t privateKey;
     uint32_t tx = 0;
-    uint8_t rLength, sLength, rOffset, sOffset;
-    uint32_t v = 0;
     os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.transactionContext.bip32Path,
                                tmpCtx.transactionContext.pathLength,
                                privateKeyData, NULL);
@@ -575,24 +577,8 @@ unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
                       tmpCtx.transactionContext.data,
                       tmpCtx.transactionContext.dataLength, NULL, 0, signature, &info);
     os_memset(&privateKey, 0, sizeof(privateKey));    
-    // Parity is present in the sequence tag in the legacy API
-    if (tmpContent.txContent.vLength == 0) {
-      // Legacy API
-      G_io_apdu_buffer[0] = 27;
-    }
-    else {
-      // New API
-      // Note that this is wrong for a large v, but the client can always recover
-      G_io_apdu_buffer[0] = (v * 2) + 35; 
-    }
-    if (info & CX_ECCINFO_PARITY_ODD) {
-      G_io_apdu_buffer[0]++;
-    }
-    if (info & CX_ECCINFO_xGTn) {
-      G_io_apdu_buffer[0] += 2;
-    }
-    os_memmove(G_io_apdu_buffer + 1, signature, 64);
-    tx = 65;
+    os_memmove(G_io_apdu_buffer, signature, 64);
+    tx = 64;
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
 send:    
@@ -790,17 +776,10 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
 
 uint32_t set_result_get_publicKey() {
     uint32_t tx = 0;
-    G_io_apdu_buffer[tx++] = 65;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.publicKey.W, 65);
-    tx += 65;
     uint8_t address_size = strlen(tmpCtx.publicKeyContext.address);
     G_io_apdu_buffer[tx++] = address_size;
     os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, address_size);
     tx += address_size;
-    if (tmpCtx.publicKeyContext.getChaincode) {
-      os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.chainCode, 32);
-      tx += 32;
-    }
     return tx;
 }
 
@@ -1076,60 +1055,28 @@ customStatus_e customProcessor(txContext_t *context) {
 
 
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-  UNUSED(dataLength);  
+  UNUSED(dataLength);
+  UNUSED(p1);
+  UNUSED(p2);
   uint8_t privateKeyData[32];
-  uint32_t bip32Path[MAX_BIP32_PATH];
-  uint32_t i;
-  uint8_t bip32PathLength = *(dataBuffer++);
+  uint32_t bip32Path[BIP32_PATH];
   cx_ecfp_private_key_t privateKey;
 
-  if ((bip32PathLength < 0x01) ||
-      (bip32PathLength > MAX_BIP32_PATH)) {
-    PRINTF("Invalid path\n");
-    THROW(0x6a80);
-  }
-  if ((p1 != P1_CONFIRM) && (p1 != P1_NON_CONFIRM)) {
-    THROW(0x6B00);
-  }
-  if ((p2 != P2_CHAINCODE) && (p2 != P2_NO_CHAINCODE)) {
-    THROW(0x6B00);
-  }
-  for (i = 0; i < bip32PathLength; i++) {
-    bip32Path[i] = (dataBuffer[0] << 24) |
-                   (dataBuffer[1] << 16) |
-                   (dataBuffer[2] << 8) | (dataBuffer[3]);
-    dataBuffer += 4;
-  }
-  tmpCtx.publicKeyContext.getChaincode = (p2 == P2_CHAINCODE);
-  os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, bip32PathLength, privateKeyData, (tmpCtx.publicKeyContext.getChaincode ? tmpCtx.publicKeyContext.chainCode : NULL));
+  os_memmove(bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
+  uint32_t accoutNumber =
+        (dataBuffer[0] << 24) | (dataBuffer[1] << 16) |
+        (dataBuffer[2] << 8) | (dataBuffer[3]);
+  dataBuffer += 4;
+  bip32Path[2] += accoutNumber;
+  os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
   cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
   cx_ecfp_generate_pair(CX_CURVE_Ed25519, &tmpCtx.publicKeyContext.publicKey, &privateKey, 1);
   os_memset(&privateKey, 0, sizeof(privateKey));
   os_memset(privateKeyData, 0, sizeof(privateKeyData));
   getAeAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address);
-  if (p1 == P1_NON_CONFIRM) {
-    *tx = set_result_get_publicKey();
-    THROW(0x9000);
-  } 
-  else 
-  {
-    /*
-    addressSummary[0] = '0';
-    addressSummary[1] = 'x';
-    os_memmove((unsigned char *)(addressSummary + 2), tmpCtx.publicKeyContext.address, 4);
-    os_memmove((unsigned char *)(addressSummary + 6), "...", 3);
-    os_memmove((unsigned char *)(addressSummary + 9), tmpCtx.publicKeyContext.address + 40 - 4, 4);
-    addressSummary[13] = '\0';
-    */
 
-    // prepare for a UI based reply
-
-    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.publicKeyContext.address);
-    ux_step = 0;
-    ux_step_count = 2;
-    UX_DISPLAY(ui_address_nanos, ui_address_prepro);                    
-    *flags |= IO_ASYNCH_REPLY;
-  }
+  *tx = set_result_get_publicKey();
+  THROW(0x9000);
 }
 
 void finalizeParsing(bool direct) {
@@ -1146,21 +1093,14 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
   parserStatus_e txResult;                    
   uint32_t i;
   if (p1 == P1_FIRST) {
-    tmpCtx.transactionContext.pathLength = workBuffer[0];
-    if ((tmpCtx.transactionContext.pathLength < 0x01) ||
-        (tmpCtx.transactionContext.pathLength > MAX_BIP32_PATH)) {
-      PRINTF("Invalid path\n");
-      THROW(0x6a80);
-    }
-    workBuffer++;
-    dataLength--;
-    for (i = 0; i < tmpCtx.transactionContext.pathLength; i++) {
-      tmpCtx.transactionContext.bip32Path[i] =
+    tmpCtx.transactionContext.pathLength = BIP32_PATH;
+    os_memmove(tmpCtx.transactionContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
+    uint32_t accoutNumber =
         (workBuffer[0] << 24) | (workBuffer[1] << 16) |
         (workBuffer[2] << 8) | (workBuffer[3]);
-      workBuffer += 4;
-      dataLength -= 4;
-    }
+    workBuffer += 4;
+    dataLength -= 4;
+    tmpCtx.transactionContext.bip32Path[2] += accoutNumber;
     dataPresent = false;
     tokenProvisioned = false;
     initTx(&txContext, &sha3, &tmpContent.txContent, customProcessor, NULL);
