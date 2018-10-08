@@ -524,8 +524,7 @@ unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     cx_ecfp_private_key_t privateKey;
     uint32_t tx = 0;
     os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.messageSigningContext.bip32Path,
-                               tmpCtx.messageSigningContext.pathLength,
-                               privateKeyData, NULL);
+                               BIP32_PATH, privateKeyData, NULL);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     unsigned int info = 0;
@@ -878,15 +877,13 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
   UNUSED(tx);
   uint8_t messageLength;
   if (p1 == P1_FIRST) {
-    uint32_t i;
-    tmpCtx.messageSigningContext.pathLength = workBuffer[0];
-    if ((tmpCtx.messageSigningContext.pathLength < 0x01) ||
-        (tmpCtx.messageSigningContext.pathLength > BIP32_PATH)) {
-        PRINTF("Invalid path\n");
-        THROW(0x6a80);
-    }
-    workBuffer++;
-    dataLength--;
+    os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
+    uint32_t accoutNumber =
+      (workBuffer[0] << 24) | (workBuffer[1] << 16) |
+      (workBuffer[2] << 8) | (workBuffer[3]);
+    workBuffer += 4;
+    dataLength -= 4;
+    tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
     tmpCtx.messageSigningContext.remainingLength =
       (workBuffer[0] << 24) | (workBuffer[1] << 16) |
       (workBuffer[2] << 8) | (workBuffer[3]);
