@@ -131,11 +131,9 @@ union {
 
 volatile uint8_t dataAllowed;
 volatile uint8_t contractDetails;
-volatile char addressSummary[32];
 volatile bool dataPresent;
 volatile bool tokenProvisioned;
 
-bagl_element_t tmp_element;
 
 ux_state_t ux;
 // display stepped screens
@@ -166,8 +164,6 @@ union {
 
 WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t*) PIC(&N_storage_real))
-
-static const char const CONTRACT_ADDRESS[] = "New contract";
 
 static const char const SIGN_MAGIC[] = "\x19"
                                        "Ethereum Signed Message:\n";
@@ -1086,8 +1082,6 @@ void finalizeParsing(bool direct) {
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    parserStatus_e txResult;
-    uint32_t i;
     if (p1 == P1_FIRST) {
         tmpCtx.transactionContext.pathLength = BIP32_PATH;
         os_memmove(tmpCtx.transactionContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
