@@ -17,16 +17,13 @@
 
 #include "os.h"
 #include "cx.h"
-#include "stdbool.h"
 #include "ethUstream.h"
-#include "ethUtils.h"
 #include "aeUtils.h"
 #include "uint256.h"
 #include "tokens.h"
 #include "chainConfig.h"
 
 #include "os_io_seproxyhal.h"
-#include "string.h"
 
 #include "glyphs.h"
 
