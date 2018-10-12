@@ -33,7 +33,6 @@
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 
-unsigned int io_seproxyhal_touch_settings(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_exit(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_tx_cancel(const bagl_element_t *e);
@@ -179,13 +178,6 @@ void array_hexstr(char *strbuf, const void *bin, unsigned int len) {
 }
 
 
-const bagl_element_t* ui_menu_item_out_over(const bagl_element_t* e) {
-    // the selection rectangle is after the none|touchable
-    e = (const bagl_element_t*)(((unsigned int)e)+sizeof(bagl_element_t));
-    return e;
-}
-
-
 const ux_menu_entry_t menu_main[];
 const ux_menu_entry_t menu_settings[];
 //const ux_menu_entry_t menu_settings_browser[];
@@ -271,23 +263,6 @@ const bagl_element_t ui_address_nanos[] = {
     {{BAGL_LABELINE                       , 0x02,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, (char*)strings.common.fullAddress, 0, 0, 0, NULL, NULL, NULL },
 };
 
-unsigned int ui_address_prepro(const bagl_element_t* element) {
-    if (element->component.userid > 0) {
-        unsigned int display = (ux_step == element->component.userid-1);
-        if(display) {
-            switch(element->component.userid) {
-                case 1:
-                    UX_CALLBACK_SET_INTERVAL(2000);
-                    break;
-                case 2:
-                    UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000+bagl_label_roundtrip_duration_ms(element, 7)));
-                    break;
-            }
-        }
-        return display;
-    }
-    return 1;
-}
 
 unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter);
 
@@ -504,32 +479,6 @@ unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int butt
         }
     }
     return 0;
-}
-
-uint32_t getV(txContent_t *txContent) {
-    uint32_t v = 0;
-    if (txContent->vLength == 1) {
-        v = txContent->v[0];
-    }
-    else
-    if (txContent->vLength == 2) {
-        v = (txContent->v[0] << 8) | txContent->v[1];
-    }
-    else
-    if (txContent->vLength == 3) {
-        v = (txContent->v[0] << 16) | (txContent->v[1] << 8) | txContent->v[2];
-    }
-    else
-    if (txContent->vLength == 4) {
-        v = (txContent->v[0] << 24) | (txContent->v[1] << 16) |
-            (txContent->v[2] << 8) | txContent->v[3];
-    }
-    else
-    if (txContent->vLength != 0) {
-        PRINTF("Unexpected v format\n");
-        THROW(EXCEPTION);
-    }
-    return v;
 }
 
 void io_seproxyhal_send_status(uint32_t sw) {
@@ -758,13 +707,6 @@ uint32_t set_result_get_publicKey() {
     os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, address_size);
     tx += address_size;
     return tx;
-}
-
-void convertUint256BE(uint8_t *data, uint32_t length, uint256_t *target) {
-    uint8_t tmp[32];
-    os_memset(tmp, 0, 32);
-    os_memmove(tmp + 32 - length, data, length);
-    readu256BE(tmp, target);
 }
 
 uint32_t splitBinaryParameterPart(char *result, uint8_t *parameter) {
