@@ -48,8 +48,6 @@ void ui_idle(void);
 uint32_t set_result_get_publicKey(void);
 void finalizeParsing(bool);
 
-#define MAX_BIP32_PATH 10
-
 #define CLA 0xE0
 #define INS_GET_PUBLIC_KEY 0x02
 #define INS_SIGN 0x04
@@ -68,8 +66,6 @@ void finalizeParsing(bool);
 #define OFFSET_P2 3
 #define OFFSET_LC 4
 #define OFFSET_CDATA 5
-
-#define WEI_TO_ETHER 18
 
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
@@ -95,14 +91,14 @@ typedef struct publicKeyContext_t {
 
 typedef struct transactionContext_t {
     uint8_t pathLength;
-    uint32_t bip32Path[MAX_BIP32_PATH];
+    uint32_t bip32Path[BIP32_PATH];
     uint8_t *data;
     uint8_t dataLength;
 } transactionContext_t;
 
 typedef struct messageSigningContext_t {
     uint8_t pathLength;
-    uint32_t bip32Path[MAX_BIP32_PATH];
+    uint32_t bip32Path[BIP32_PATH];
     uint8_t hash[32];
     uint32_t remainingLength;
 } messageSigningContext_t;
@@ -188,15 +184,6 @@ const bagl_element_t* ui_menu_item_out_over(const bagl_element_t* e) {
     e = (const bagl_element_t*)(((unsigned int)e)+sizeof(bagl_element_t));
     return e;
 }
-
-
-#define BAGL_FONT_OPEN_SANS_LIGHT_16_22PX_AVG_WIDTH 10
-#define BAGL_FONT_OPEN_SANS_REGULAR_10_13PX_AVG_WIDTH 8
-#define MAX_CHAR_PER_LINE 25
-
-#define COLOR_BG_1 0xF9F9F9
-#define COLOR_APP 0x0ebdcf
-#define COLOR_APP_LIGHT 0x87dee6
 
 
 const ux_menu_entry_t menu_main[];
@@ -1135,7 +1122,7 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
         uint32_t i;
         tmpCtx.messageSigningContext.pathLength = workBuffer[0];
         if ((tmpCtx.messageSigningContext.pathLength < 0x01) ||
-            (tmpCtx.messageSigningContext.pathLength > MAX_BIP32_PATH)) {
+            (tmpCtx.messageSigningContext.pathLength > BIP32_PATH)) {
             PRINTF("Invalid path\n");
             THROW(0x6a80);
         }
