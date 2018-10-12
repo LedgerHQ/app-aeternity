@@ -51,11 +51,7 @@ APP_LOAD_PARAMS += $(APP_LOAD_FLAGS)
 DEFINES += $(DEFINES_LIB)
 
 #prepare hsm generation
-ifeq ($(TARGET_NAME),TARGET_BLUE)
-ICONNAME=blue_app_$(CHAIN).gif
-else
-ICONNAME=nanos_app_$(CHAIN).gif
-endif
+ICONNAME=icon_app.gif
 
 ################
 # Default rule #
