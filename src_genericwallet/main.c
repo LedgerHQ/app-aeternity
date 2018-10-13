@@ -19,7 +19,6 @@
 #include "cx.h"
 #include "ethUstream.h"
 #include "aeUtils.h"
-#include "tokens.h"
 #include "chainConfig.h"
 
 #include "os_io_seproxyhal.h"
@@ -68,12 +67,6 @@ void finalizeParsing(bool);
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
 
-static const uint8_t const TOKEN_TRANSFER_ID[] = { 0xa9, 0x05, 0x9c, 0xbb };
-typedef struct tokenContext_t {
-    uint8_t data[4 + 32 + 32];
-    uint32_t dataFieldPos;
-} tokenContext_t;
-
 typedef struct rawDataContext_t {
     uint8_t data[32];
     uint8_t fieldIndex;
@@ -116,14 +109,12 @@ union {
 cx_sha3_t sha3;
 
 union {
-    tokenContext_t tokenContext;
     rawDataContext_t rawDataContext;
 } dataContext;
 
 volatile uint8_t dataAllowed;
 volatile uint8_t contractDetails;
 volatile bool dataPresent;
-volatile bool tokenProvisioned;
 
 
 ux_state_t ux;
@@ -727,136 +718,6 @@ uint32_t splitBinaryParameterPart(char *result, uint8_t *parameter) {
     }
 }
 
-tokenDefinition_t* getKnownToken() {
-    tokenDefinition_t *currentToken = NULL;
-    uint32_t numTokens = 0;
-    uint32_t i;
-    switch(chainConfig->kind) {
-        case CHAIN_KIND_AKROMA:
-            numTokens = NUM_TOKENS_AKROMA;
-            break;
-        case CHAIN_KIND_ETHEREUM:
-            numTokens = NUM_TOKENS_ETHEREUM;
-            break;
-        case CHAIN_KIND_ETHEREUM_CLASSIC:
-            numTokens = NUM_TOKENS_ETHEREUM_CLASSIC;
-            break;
-        case CHAIN_KIND_PIRL:
-            numTokens = NUM_TOKENS_PIRL;
-            break;
-        case CHAIN_KIND_POA:
-            numTokens = NUM_TOKENS_POA;
-            break;
-        case CHAIN_KIND_RSK:
-            numTokens = NUM_TOKENS_RSK;
-            break;
-        case CHAIN_KIND_EXPANSE:
-            numTokens = NUM_TOKENS_EXPANSE;
-            break;
-        case CHAIN_KIND_UBIQ:
-            numTokens = NUM_TOKENS_UBIQ;
-            break;
-        case CHAIN_KIND_WANCHAIN:
-            numTokens = NUM_TOKENS_WANCHAIN;
-            break;
-        case CHAIN_KIND_KUSD:
-            numTokens = NUM_TOKENS_KUSD;
-            break;
-        case CHAIN_KIND_MUSICOIN:
-            numTokens = NUM_TOKENS_MUSICOIN;
-            break;
-        case CHAIN_KIND_CALLISTO:
-            numTokens = NUM_TOKENS_CALLISTO;
-            break;
-        case CHAIN_KIND_ETHERSOCIAL:
-            numTokens = NUM_TOKENS_ETHERSOCIAL;
-            break;
-        case CHAIN_KIND_ELLAISM:
-            numTokens = NUM_TOKENS_ELLAISM;
-            break;
-        case CHAIN_KIND_ETHER1:
-            numTokens = NUM_TOKENS_ETHER1;
-            break;
-        case CHAIN_KIND_ETHERGEM:
-            numTokens = NUM_TOKENS_ETHERGEM;
-            break;
-        case CHAIN_KIND_ATHEIOS:
-            numTokens = NUM_TOKENS_ATHEIOS;
-            break;
-        case CHAIN_KIND_GOCHAIN:
-            numTokens = NUM_TOKENS_GOCHAIN;
-            break;
-        case CHAIN_KIND_EOSCLASSIC:
-            numTokens = NUM_TOKENS_EOSCLASSIC;
-            break;
-    }
-    for (i = 0; i < numTokens; i++) {
-        switch(chainConfig->kind) {
-            case CHAIN_KIND_AKROMA:
-                currentToken = PIC(&TOKENS_AKROMA[i]);
-                break;
-            case CHAIN_KIND_ETHEREUM:
-                currentToken = PIC(&TOKENS_ETHEREUM[i]);
-                break;
-            case CHAIN_KIND_ETHEREUM_CLASSIC:
-                currentToken = PIC(&TOKENS_ETHEREUM_CLASSIC[i]);
-                break;
-            case CHAIN_KIND_PIRL:
-                currentToken = PIC(&TOKENS_PIRL[i]);
-                break;
-            case CHAIN_KIND_POA:
-                currentToken = PIC(&TOKENS_POA[i]);
-                break;
-            case CHAIN_KIND_RSK:
-                currentToken = PIC(&TOKENS_RSK[i]);
-                break;
-            case CHAIN_KIND_EXPANSE:
-                currentToken = PIC(&TOKENS_EXPANSE[i]);
-                break;
-            case CHAIN_KIND_UBIQ:
-                currentToken = PIC(&TOKENS_UBIQ[i]);
-                break;
-            case CHAIN_KIND_WANCHAIN:
-                currentToken = PIC(&TOKENS_WANCHAIN[i]);
-                break;
-            case CHAIN_KIND_KUSD:
-                currentToken = PIC(&TOKENS_KUSD[i]);
-                break;
-            case CHAIN_KIND_MUSICOIN:
-                currentToken = PIC(&TOKENS_MUSICOIN[i]);
-                break;
-            case CHAIN_KIND_CALLISTO:
-                currentToken = PIC(&TOKENS_CALLISTO[i]);
-                break;
-            case CHAIN_KIND_ETHERSOCIAL:
-                currentToken = PIC(&TOKENS_ETHERSOCIAL[i]);
-                break;
-            case CHAIN_KIND_ELLAISM:
-                currentToken = PIC(&TOKENS_ELLAISM[i]);
-                break;
-            case CHAIN_KIND_ETHER1:
-                currentToken = PIC(&TOKENS_ETHER1[i]);
-                break;
-            case CHAIN_KIND_ETHERGEM:
-                currentToken = PIC(&TOKENS_ETHERGEM[i]);
-                break;
-            case CHAIN_KIND_ATHEIOS:
-                currentToken = PIC(&TOKENS_ATHEIOS[i]);
-                break;
-            case CHAIN_KIND_GOCHAIN:
-                currentToken = PIC(&TOKENS_GOCHAIN[i]);
-                break;
-            case CHAIN_KIND_EOSCLASSIC:
-                currentToken = PIC(&TOKENS_EOSCLASSIC[i]);
-                break;
-        }
-        if (os_memcmp(currentToken->address, tmpContent.txContent.destination, 20) == 0) {
-            return currentToken;
-        }
-    }
-    return NULL;
-}
-
 
 customStatus_e customProcessor(txContext_t *context) {
     if ((context->currentField == TX_RLP_DATA) &&
@@ -872,100 +733,75 @@ customStatus_e customProcessor(txContext_t *context) {
                 PRINTF("Missing function selector\n");
                 return CUSTOM_FAULT;
             }
-            // Initial check to see if the token content can be processed
-            tokenProvisioned =
-                (context->currentFieldLength == sizeof(dataContext.tokenContext.data)) &&
-                (os_memcmp(context->workBuffer, TOKEN_TRANSFER_ID, 4) == 0) &&
-                (getKnownToken() != NULL);
         }
-        if (tokenProvisioned) {
-            if (context->currentFieldPos < context->currentFieldLength) {
-                uint32_t copySize = (context->commandLength <
-                                        ((context->currentFieldLength -
-                                                   context->currentFieldPos))
-                                        ? context->commandLength
-                                            : context->currentFieldLength -
-                                                   context->currentFieldPos);
-                copyTxData(context,
-                    dataContext.tokenContext.data + context->currentFieldPos,
-                    copySize);
-            }
-            if (context->currentFieldPos == context->currentFieldLength) {
-                context->currentField++;
-                context->processingField = false;
-            }
-            return CUSTOM_HANDLED;
-        }
-        else {
-            uint32_t blockSize;
-            uint32_t copySize;
-            uint32_t fieldPos = context->currentFieldPos;
-            if (fieldPos == 0) {
-                if (!N_storage.dataAllowed) {
-                    PRINTF("Data field forbidden\n");
-                    return CUSTOM_FAULT;
-                }
-                if (!N_storage.contractDetails) {
-                    return CUSTOM_NOT_HANDLED;
-                }
-                dataContext.rawDataContext.fieldIndex = 0;
-                dataContext.rawDataContext.fieldOffset = 0;
-                blockSize = 4;
-            }
-            else {
-                blockSize = 32 - dataContext.rawDataContext.fieldOffset;
-            }
-
-            // Sanity check
-            if ((context->currentFieldLength - fieldPos) < blockSize) {
-                PRINTF("Unconsistent data\n");
+        uint32_t blockSize;
+        uint32_t copySize;
+        uint32_t fieldPos = context->currentFieldPos;
+        if (fieldPos == 0) {
+            if (!N_storage.dataAllowed) {
+                PRINTF("Data field forbidden\n");
                 return CUSTOM_FAULT;
             }
-
-            copySize = (context->commandLength < blockSize ? context->commandLength : blockSize);
-            copyTxData(context,
-                       dataContext.rawDataContext.data + dataContext.rawDataContext.fieldOffset,
-                       copySize);
-
-            if (context->currentFieldPos == context->currentFieldLength) {
-                context->currentField++;
-                context->processingField = false;
+            if (!N_storage.contractDetails) {
+                return CUSTOM_NOT_HANDLED;
             }
+            dataContext.rawDataContext.fieldIndex = 0;
+            dataContext.rawDataContext.fieldOffset = 0;
+            blockSize = 4;
+        }
+        else {
+            blockSize = 32 - dataContext.rawDataContext.fieldOffset;
+        }
 
-            dataContext.rawDataContext.fieldOffset += copySize;
+        // Sanity check
+        if ((context->currentFieldLength - fieldPos) < blockSize) {
+            PRINTF("Unconsistent data\n");
+            return CUSTOM_FAULT;
+        }
 
-            if (copySize == blockSize) {
-                // Can display
-                if (fieldPos != 0) {
-                    dataContext.rawDataContext.fieldIndex++;
-                }
-                dataContext.rawDataContext.fieldOffset = 0;
-                if (fieldPos == 0) {
-                    array_hexstr(strings.tmp.tmp, dataContext.rawDataContext.data, 4);
-                    ux_step = 0;
-                    ux_step_count = 2;
-                    UX_DISPLAY(ui_data_selector_nanos, ui_data_selector_prepro);
-                }
-                else {
-                    uint32_t offset = 0;
-                    uint32_t i;
-                    snprintf(strings.tmp.tmp2, sizeof(strings.tmp.tmp2), "Field %d", dataContext.rawDataContext.fieldIndex);
-                    for (i = 0; i < 4; i++) {
-                        offset += splitBinaryParameterPart(strings.tmp.tmp + offset, dataContext.rawDataContext.data + 8 * i);
-                        if (i != 3) {
-                            strings.tmp.tmp[offset++] = ':';
-                        }
-                    }
-                    ux_step = 0;
-                    ux_step_count = 2;
-                    UX_DISPLAY(ui_data_parameter_nanos, ui_data_parameter_prepro);
-                }
+        copySize = (context->commandLength < blockSize ? context->commandLength : blockSize);
+        copyTxData(context,
+                   dataContext.rawDataContext.data + dataContext.rawDataContext.fieldOffset,
+                   copySize);
+
+        if (context->currentFieldPos == context->currentFieldLength) {
+            context->currentField++;
+            context->processingField = false;
+        }
+
+        dataContext.rawDataContext.fieldOffset += copySize;
+
+        if (copySize == blockSize) {
+            // Can display
+            if (fieldPos != 0) {
+                dataContext.rawDataContext.fieldIndex++;
+            }
+            dataContext.rawDataContext.fieldOffset = 0;
+            if (fieldPos == 0) {
+                array_hexstr(strings.tmp.tmp, dataContext.rawDataContext.data, 4);
+                ux_step = 0;
+                ux_step_count = 2;
+                UX_DISPLAY(ui_data_selector_nanos, ui_data_selector_prepro);
             }
             else {
-                return CUSTOM_HANDLED;
+                uint32_t offset = 0;
+                uint32_t i;
+                snprintf(strings.tmp.tmp2, sizeof(strings.tmp.tmp2), "Field %d", dataContext.rawDataContext.fieldIndex);
+                for (i = 0; i < 4; i++) {
+                    offset += splitBinaryParameterPart(strings.tmp.tmp + offset, dataContext.rawDataContext.data + 8 * i);
+                    if (i != 3) {
+                        strings.tmp.tmp[offset++] = ':';
+                    }
+                }
+                ux_step = 0;
+                ux_step_count = 2;
+                UX_DISPLAY(ui_data_parameter_nanos, ui_data_parameter_prepro);
             }
-            return CUSTOM_SUSPENDED;
         }
+        else {
+            return CUSTOM_HANDLED;
+        }
+        return CUSTOM_SUSPENDED;
     }
     return CUSTOM_NOT_HANDLED;
 }
@@ -1017,7 +853,6 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
         dataLength -= 4;
         tmpCtx.transactionContext.bip32Path[2] += accoutNumber;
         dataPresent = false;
-        tokenProvisioned = false;
         initTx(&txContext, &sha3, &tmpContent.txContent, customProcessor, NULL);
         tmpCtx.transactionContext.dataLength = dataLength;
         tmpCtx.transactionContext.data = workBuffer;
