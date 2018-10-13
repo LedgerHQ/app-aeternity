@@ -874,56 +874,55 @@ void handleGetAppConfiguration(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
 }
 
 void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-  UNUSED(tx);
-  uint8_t messageLength;
-  if (p1 == P1_FIRST) {
-    os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-    uint32_t accoutNumber =
-      (workBuffer[0] << 24) | (workBuffer[1] << 16) |
-      (workBuffer[2] << 8) | (workBuffer[3]);
-    workBuffer += 4;
-    dataLength -= 4;
-    tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
-    tmpCtx.messageSigningContext.remainingLength =
-      (workBuffer[0] << 24) | (workBuffer[1] << 16) |
-      (workBuffer[2] << 8) | (workBuffer[3]);
-    workBuffer += 4;
-    dataLength -= 4;
-    uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
-    tmpCtx.messageSigningContext.dataLength = 0;
-    tmpCtx.messageSigningContext.data[0] = signMagicLength;
-    os_memmove(tmpCtx.messageSigningContext.data + 1, SIGN_MAGIC, signMagicLength);
-    messageLength = 1 + signMagicLength;
-    tmpCtx.messageSigningContext.data[messageLength] = tmpCtx.messageSigningContext.remainingLength;
-    messageLength++;
-  }
-  else if (p1 != P1_MORE) {
-    THROW(0x6B00);
-  }
-  if (p2 != 0) {
-    THROW(0x6B00);
-  }
-  if (dataLength > tmpCtx.messageSigningContext.remainingLength
-      || tmpCtx.messageSigningContext.remainingLength >= 0xFD) {
-      THROW(0x6A80);
-  }
+    UNUSED(tx);
+    uint8_t messageLength;
+    if (p1 == P1_FIRST) {
+        os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
+        uint32_t accoutNumber =
+            (workBuffer[0] << 24) | (workBuffer[1] << 16) |
+            (workBuffer[2] << 8) | (workBuffer[3]);
+        workBuffer += 4;
+        dataLength -= 4;
+        tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
+        tmpCtx.messageSigningContext.remainingLength =
+            (workBuffer[0] << 24) | (workBuffer[1] << 16) |
+            (workBuffer[2] << 8) | (workBuffer[3]);
+        workBuffer += 4;
+        dataLength -= 4;
+        uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
+        tmpCtx.messageSigningContext.dataLength = 0;
+        tmpCtx.messageSigningContext.data[0] = signMagicLength;
+        os_memmove(tmpCtx.messageSigningContext.data + 1, SIGN_MAGIC, signMagicLength);
+        messageLength = 1 + signMagicLength;
+        tmpCtx.messageSigningContext.data[messageLength] = tmpCtx.messageSigningContext.remainingLength;
+        messageLength++;
+    }
+    else if (p1 != P1_MORE) {
+        THROW(0x6B00);
+    }
+    if (p2 != 0) {
+        THROW(0x6B00);
+    }
+    if (dataLength > tmpCtx.messageSigningContext.remainingLength
+        || tmpCtx.messageSigningContext.remainingLength >= 0xFD) {
+        THROW(0x6A80);
+    }
 
-  os_memmove(tmpCtx.messageSigningContext.data + messageLength
-             + tmpCtx.messageSigningContext.dataLength,
-             workBuffer, dataLength);
-  tmpCtx.messageSigningContext.dataLength += dataLength;
-  tmpCtx.messageSigningContext.remainingLength -= dataLength;
-  if (tmpCtx.messageSigningContext.remainingLength == 0) {
-    strings.common.fullAddress[0] = '\0';
-    ux_step = 0;
-    ux_step_count = 2;
-    UX_DISPLAY(ui_approval_signMessage_nanos,
+    os_memmove(tmpCtx.messageSigningContext.data + messageLength
+                + tmpCtx.messageSigningContext.dataLength,
+                workBuffer, dataLength);
+    tmpCtx.messageSigningContext.dataLength += dataLength;
+    tmpCtx.messageSigningContext.remainingLength -= dataLength;
+    if (tmpCtx.messageSigningContext.remainingLength == 0) {
+        strings.common.fullAddress[0] = '\0';
+        ux_step = 0;
+        ux_step_count = 2;
+        UX_DISPLAY(ui_approval_signMessage_nanos,
                    ui_approval_signMessage_prepro);
-    *flags |= IO_ASYNCH_REPLY;
-
-  } else {
-    THROW(0x9000);
-  }
+        *flags |= IO_ASYNCH_REPLY;
+    } else {
+        THROW(0x9000);
+    }
 }
 
 void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
