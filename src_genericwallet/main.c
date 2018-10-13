@@ -90,8 +90,9 @@ typedef struct transactionContext_t {
 typedef struct messageSigningContext_t {
     uint8_t pathLength;
     uint32_t bip32Path[BIP32_PATH];
-    uint8_t hash[32];
+    uint8_t data[0xFD + 26 + 2];
     uint32_t remainingLength;
+    uint32_t dataLength;
 } messageSigningContext_t;
 
 union {
@@ -147,8 +148,7 @@ union {
 WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t*) PIC(&N_storage_real))
 
-static const char const SIGN_MAGIC[] = "\x19"
-                                       "Ethereum Signed Message:\n";
+static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
 
 const unsigned char hex_digits[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -523,33 +523,19 @@ unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     uint8_t signatureLength;
     cx_ecfp_private_key_t privateKey;
     uint32_t tx = 0;
-    uint8_t rLength, sLength, rOffset, sOffset;
-    os_perso_derive_node_bip32(CX_CURVE_256K1, tmpCtx.messageSigningContext.bip32Path,
-                               tmpCtx.messageSigningContext.pathLength,
-                               privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &privateKey);
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.messageSigningContext.bip32Path,
+                               BIP32_PATH, privateKeyData, NULL);
+    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     unsigned int info = 0;
     signatureLength =
-        cx_ecdsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA256,
-                      tmpCtx.messageSigningContext.hash,
-                      sizeof(tmpCtx.messageSigningContext.hash), signature, &info);
+        cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
+                      tmpCtx.messageSigningContext.data,
+                      tmpCtx.messageSigningContext.dataLength + sizeof(SIGN_MAGIC) + 1,
+                      NULL, 0, signature, &info);
     os_memset(&privateKey, 0, sizeof(privateKey));
-    G_io_apdu_buffer[0] = 27;
-    if (info & CX_ECCINFO_PARITY_ODD) {
-        G_io_apdu_buffer[0]++;
-    }
-    if (info & CX_ECCINFO_xGTn) {
-        G_io_apdu_buffer[0] += 2;
-    }
-    rLength = signature[3];
-    sLength = signature[4 + rLength + 1];
-    rOffset = (rLength == 33 ? 1 : 0);
-    sOffset = (sLength == 33 ? 1 : 0);
-    os_memmove(G_io_apdu_buffer + 1, signature + 4 + rOffset, 32);
-    os_memmove(G_io_apdu_buffer + 1 + 32, signature + 4 + rLength + 2 + sOffset,
-               32);
-    tx = 65;
+    os_memmove(G_io_apdu_buffer, signature, 64);
+    tx = 64;
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
     // Send back the response, do not restart the event loop
@@ -889,45 +875,27 @@ void handleGetAppConfiguration(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
 
 void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    uint8_t hashMessage[32];
+    uint8_t messageLength;
     if (p1 == P1_FIRST) {
-        char tmp[11];
-        uint32_t index;
-        uint32_t base = 10;
-        uint8_t pos = 0;
-        uint32_t i;
-        tmpCtx.messageSigningContext.pathLength = workBuffer[0];
-        if ((tmpCtx.messageSigningContext.pathLength < 0x01) ||
-            (tmpCtx.messageSigningContext.pathLength > BIP32_PATH)) {
-            PRINTF("Invalid path\n");
-            THROW(0x6a80);
-        }
-        workBuffer++;
-        dataLength--;
-        for (i = 0; i < tmpCtx.messageSigningContext.pathLength; i++) {
-            tmpCtx.messageSigningContext.bip32Path[i] =
+        os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
+        uint32_t accoutNumber =
             (workBuffer[0] << 24) | (workBuffer[1] << 16) |
             (workBuffer[2] << 8) | (workBuffer[3]);
-            workBuffer += 4;
-            dataLength -= 4;
-        }
-        tmpCtx.messageSigningContext.remainingLength =
-        (workBuffer[0] << 24) | (workBuffer[1] << 16) |
-        (workBuffer[2] << 8) | (workBuffer[3]);
         workBuffer += 4;
         dataLength -= 4;
-        // Initialize message header + length
-        cx_keccak_init(&sha3, 256);
-        cx_hash((cx_hash_t *)&sha3, 0, SIGN_MAGIC, sizeof(SIGN_MAGIC) - 1, NULL);
-        for (index = 1; (((index * base) <= tmpCtx.messageSigningContext.remainingLength) &&
-                            (((index * base) / base) == index));
-                index *= base);
-        for (; index; index /= base) {
-        tmp[pos++] = '0' + ((tmpCtx.messageSigningContext.remainingLength / index) % base);
-        }
-        tmp[pos] = '\0';
-        cx_hash((cx_hash_t *)&sha3, 0, tmp, pos, NULL);
-        cx_sha256_init(&tmpContent.sha2);
+        tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
+        tmpCtx.messageSigningContext.remainingLength =
+            (workBuffer[0] << 24) | (workBuffer[1] << 16) |
+            (workBuffer[2] << 8) | (workBuffer[3]);
+        workBuffer += 4;
+        dataLength -= 4;
+        uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
+        tmpCtx.messageSigningContext.dataLength = 0;
+        tmpCtx.messageSigningContext.data[0] = signMagicLength;
+        os_memmove(tmpCtx.messageSigningContext.data + 1, SIGN_MAGIC, signMagicLength);
+        messageLength = 1 + signMagicLength;
+        tmpCtx.messageSigningContext.data[messageLength] = tmpCtx.messageSigningContext.remainingLength;
+        messageLength++;
     }
     else if (p1 != P1_MORE) {
         THROW(0x6B00);
@@ -935,28 +903,23 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
     if (p2 != 0) {
         THROW(0x6B00);
     }
-    if (dataLength > tmpCtx.messageSigningContext.remainingLength) {
+    if (dataLength > tmpCtx.messageSigningContext.remainingLength
+        || tmpCtx.messageSigningContext.remainingLength >= 0xFD) {
         THROW(0x6A80);
     }
-    cx_hash((cx_hash_t *)&sha3, 0, workBuffer, dataLength, NULL);
-    cx_hash((cx_hash_t *)&tmpContent.sha2, 0, workBuffer, dataLength, NULL);
+
+    os_memmove(tmpCtx.messageSigningContext.data + messageLength
+                + tmpCtx.messageSigningContext.dataLength,
+                workBuffer, dataLength);
+    tmpCtx.messageSigningContext.dataLength += dataLength;
     tmpCtx.messageSigningContext.remainingLength -= dataLength;
     if (tmpCtx.messageSigningContext.remainingLength == 0) {
-        cx_hash((cx_hash_t *)&sha3, CX_LAST, workBuffer, 0, tmpCtx.messageSigningContext.hash);
-        cx_hash((cx_hash_t *)&tmpContent.sha2, CX_LAST, workBuffer, 0, hashMessage);
-
-#define HASH_LENGTH 4
-        array_hexstr(strings.common.fullAddress, hashMessage, HASH_LENGTH / 2);
-        strings.common.fullAddress[HASH_LENGTH / 2 * 2] = '.';
-        strings.common.fullAddress[HASH_LENGTH / 2 * 2 + 1] = '.';
-        strings.common.fullAddress[HASH_LENGTH / 2 * 2 + 2] = '.';
-        array_hexstr(strings.common.fullAddress + HASH_LENGTH / 2 * 2 + 3, hashMessage + 32 - HASH_LENGTH / 2, HASH_LENGTH / 2);
+        strings.common.fullAddress[0] = '\0';
         ux_step = 0;
         ux_step_count = 2;
         UX_DISPLAY(ui_approval_signMessage_nanos,
-                ui_approval_signMessage_prepro);
+                   ui_approval_signMessage_prepro);
         *flags |= IO_ASYNCH_REPLY;
-
     } else {
         THROW(0x9000);
     }
