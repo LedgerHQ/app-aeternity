@@ -19,7 +19,6 @@
 #include "cx.h"
 #include "ethUstream.h"
 #include "aeUtils.h"
-#include "uint256.h"
 #include "tokens.h"
 #include "chainConfig.h"
 
