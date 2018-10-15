@@ -21,7 +21,7 @@ endif
 include $(BOLOS_SDK)/Makefile.defines
 
 DEFINES_LIB = USE_LIB_ETHEREUM
-APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS) 
+APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=1
 APPVERSION_N=1
@@ -115,7 +115,7 @@ LDLIBS   += -lm -lgcc -lc
 include $(BOLOS_SDK)/Makefile.glyphs
 
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
-APP_SOURCE_PATH  += src_genericwallet src_common src
+APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 
 load: all
