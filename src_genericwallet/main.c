@@ -18,6 +18,7 @@
 #include "os.h"
 #include "cx.h"
 #include "ethUstream.h"
+#include "ethUtils.h"
 #include "aeUtils.h"
 #include "chainConfig.h"
 
@@ -277,7 +278,7 @@ const bagl_element_t ui_approval_nanos[] = {
     {{BAGL_LABELINE                       , 0x04,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Address", 0, 0, 0, NULL, NULL, NULL },
     {{BAGL_LABELINE                       , 0x04,  23,  26,  82,  12, 0x80|10, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 50   }, (char*)strings.common.fullAddress, 0, 0, 0, NULL, NULL, NULL },
 
-    {{BAGL_LABELINE                       , 0x05,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Maximum fees", 0, 0, 0, NULL, NULL, NULL },
+    {{BAGL_LABELINE                       , 0x05,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Fees", 0, 0, 0, NULL, NULL, NULL },
     {{BAGL_LABELINE                       , 0x05,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, (char*)strings.common.maxFee, 0, 0, 0, NULL, NULL, NULL },
 };
 
@@ -821,9 +822,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
 void finalizeParsing(bool direct) {
     ux_step = 0;
     ux_step_count = 5;
-    strings.common.maxFee[0] = '\0';
-    strings.common.fullAddress[0] = '\0';
-    strings.common.fullAmount[0] = '\0';
+    parseTx(strings.common.fullAddress, strings.common.fullAmount, strings.common.maxFee, tmpCtx.transactionContext.data);
     UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
 }
 
@@ -854,9 +853,9 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
         PRINTF("Parser not initialized\n");
         THROW(0x6985);
     }
-    *flags |= IO_ASYNCH_REPLY;
 
     finalizeParsing(true);
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 void handleGetAppConfiguration(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
