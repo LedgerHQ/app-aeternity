@@ -17,17 +17,12 @@
 
 #include "os.h"
 #include "cx.h"
-#include "ethUstream.h"
-#include "ethUtils.h"
 #include "aeUtils.h"
 #include "chainConfig.h"
-
 #include "os_io_seproxyhal.h"
 
 #include "glyphs.h"
 
-#define __NAME3(a, b, c) a##b##c
-#define NAME3(a, b, c) __NAME3(a, b, c)
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -39,12 +34,9 @@ unsigned int io_seproxyhal_touch_address_ok(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_address_cancel(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e);
 unsigned int io_seproxyhal_touch_signMessage_cancel(const bagl_element_t *e);
-unsigned int io_seproxyhal_touch_data_ok(const bagl_element_t *e);
-unsigned int io_seproxyhal_touch_data_cancel(const bagl_element_t *e);
 void ui_idle(void);
 
 uint32_t set_result_get_publicKey(void);
-void finalizeParsing(bool);
 
 #define CLA 0xE0
 #define INS_GET_PUBLIC_KEY 0x02
@@ -68,11 +60,6 @@ void finalizeParsing(bool);
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
 
-typedef struct rawDataContext_t {
-    uint8_t data[32];
-    uint8_t fieldIndex;
-    uint8_t fieldOffset;
-} rawDataContext_t;
 
 typedef struct publicKeyContext_t {
     cx_ecfp_public_key_t publicKey;
@@ -101,18 +88,6 @@ union {
     transactionContext_t transactionContext;
     messageSigningContext_t messageSigningContext;
 } tmpCtx;
-txContext_t txContext;
-
-union {
-    txContent_t txContent;
-    cx_sha256_t sha2;
-} tmpContent;
-
-cx_sha3_t sha3;
-
-union {
-    rawDataContext_t rawDataContext;
-} dataContext;
 
 volatile uint8_t dataAllowed;
 volatile uint8_t contractDetails;
@@ -158,16 +133,6 @@ const uint32_t HARDENED_OFFSET = 0x80000000;
 const uint32_t derivePath[BIP32_PATH] = {44 | HARDENED_OFFSET, 457 | HARDENED_OFFSET, 0 | HARDENED_OFFSET,
                                          0 | HARDENED_OFFSET, 0 | HARDENED_OFFSET};
 chain_config_t *chainConfig;
-
-void array_hexstr(char *strbuf, const void *bin, unsigned int len) {
-    while (len--) {
-        *strbuf++ = hex_digits[((*((char *)bin)) >> 4) & 0xF];
-        *strbuf++ = hex_digits[(*((char *)bin)) & 0xF];
-        bin = (const void *)((unsigned int)bin + 1);
-    }
-    *strbuf = 0; // EOS
-}
-
 
 const ux_menu_entry_t menu_main[];
 const ux_menu_entry_t menu_settings[];
@@ -366,25 +331,6 @@ const bagl_element_t ui_data_selector_nanos[] = {
     {{BAGL_LABELINE, 0x02, 23, 26, 82, 12, 0x80 | 10, 0, 0, 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 26}, (char *)strings.tmp.tmp, 0, 0, 0, NULL, NULL, NULL},
 };
 
-unsigned int ui_data_selector_prepro(const bagl_element_t *element) {
-    if (element->component.userid > 0) {
-        unsigned int display = (ux_step == element->component.userid - 1);
-        if (display) {
-            switch (element->component.userid) {
-                case 1:
-                    UX_CALLBACK_SET_INTERVAL(2000);
-                    break;
-                case 2:
-                    UX_CALLBACK_SET_INTERVAL(MAX(
-                        3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
-                    break;
-            }
-        }
-        return display;
-    }
-    return 1;
-}
-
 unsigned int ui_data_selector_nanos_button(unsigned int button_mask,
                                            unsigned int button_mask_counter);
 
@@ -403,28 +349,6 @@ const bagl_element_t ui_data_parameter_nanos[] = {
     {{BAGL_LABELINE, 0x02, 0, 12, 128, 12, 0, 0, 0, 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER, 0}, (char*)strings.tmp.tmp2, 0, 0, 0, NULL, NULL, NULL},
     {{BAGL_LABELINE, 0x02, 23, 26, 82, 12, 0x80 | 10, 0, 0, 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px | BAGL_FONT_ALIGNMENT_CENTER, 26}, (char *)strings.tmp.tmp, 0, 0, 0, NULL, NULL, NULL},
 };
-
-unsigned int ui_data_parameter_prepro(const bagl_element_t *element) {
-    if (element->component.userid > 0) {
-        unsigned int display = (ux_step == element->component.userid - 1);
-        if (display) {
-            switch (element->component.userid) {
-                case 1:
-                    UX_CALLBACK_SET_INTERVAL(2000);
-                    break;
-                case 2:
-                    UX_CALLBACK_SET_INTERVAL(MAX(
-                        3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
-                    break;
-            }
-        }
-        return display;
-    }
-    return 1;
-}
-
-unsigned int ui_data_parameter_nanos_button(unsigned int button_mask,
-                                            unsigned int button_mask_counter);
 
 
 void ui_idle(void) {
@@ -556,42 +480,6 @@ unsigned int io_seproxyhal_touch_signMessage_cancel(const bagl_element_t *e) {
     return 0; // do not redraw the widget
 }
 
-unsigned int io_seproxyhal_touch_data_ok(const bagl_element_t *e) {
-    parserStatus_e txResult = USTREAM_FINISHED;
-    txResult = continueTx(&txContext);
-    switch (txResult) {
-        case USTREAM_SUSPENDED:
-            break;
-        case USTREAM_FINISHED:
-            break;
-        case USTREAM_PROCESSING:
-            io_seproxyhal_send_status(0x9000);
-            ui_idle();
-            break;
-        case USTREAM_FAULT:
-            io_seproxyhal_send_status(0x6A80);
-            ui_idle();
-            break;
-        default:
-            PRINTF("Unexpected parser status\n");
-            io_seproxyhal_send_status(0x6A80);
-            ui_idle();
-    }
-
-    if (txResult == USTREAM_FINISHED) {
-        finalizeParsing(false);
-    }
-    return 0;
-}
-
-
-unsigned int io_seproxyhal_touch_data_cancel(const bagl_element_t *e) {
-    io_seproxyhal_send_status(0x6985);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
 unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch(button_mask) {
         case BUTTON_EVT_RELEASED|BUTTON_LEFT:
@@ -621,35 +509,6 @@ unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mask, unsi
     return 0;
 }
 
-unsigned int ui_data_selector_nanos_button(unsigned int button_mask,
-                                           unsigned int button_mask_counter) {
-    switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-            io_seproxyhal_touch_data_cancel(NULL);
-            break;
-
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
-            io_seproxyhal_touch_data_ok(NULL);
-            break;
-        }
-    }
-    return 0;
-}
-
-unsigned int ui_data_parameter_nanos_button(unsigned int button_mask,
-                                            unsigned int button_mask_counter) {
-    switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-            io_seproxyhal_touch_data_cancel(NULL);
-            break;
-
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
-            io_seproxyhal_touch_data_ok(NULL);
-            break;
-        }
-    }
-    return 0;
-}
 
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     switch (channel & ~(IO_FLAGS)) {
@@ -686,113 +545,6 @@ uint32_t set_result_get_publicKey() {
     return tx;
 }
 
-uint32_t splitBinaryParameterPart(char *result, uint8_t *parameter) {
-    uint32_t i;
-    for (i = 0; i < 8; i++) {
-        if (parameter[i] != 0x00) {
-            break;
-        }
-    }
-    if (i == 8) {
-        result[0] = '0';
-        result[1] = '0';
-        result[2] = '\0';
-        return 2;
-    }
-    else {
-        array_hexstr(result, parameter + i, 8 - i);
-        return ((8 - i) * 2);
-    }
-}
-
-
-customStatus_e customProcessor(txContext_t *context) {
-    if ((context->currentField == TX_RLP_DATA) &&
-        (context->currentFieldLength != 0)) {
-        dataPresent = true;
-        // If handling a new contract rather than a function call, abort immediately
-        if (tmpContent.txContent.destinationLength == 0) {
-            return CUSTOM_NOT_HANDLED;
-        }
-        if (context->currentFieldPos == 0) {
-            // If handling the beginning of the data field, assume that the function selector is present
-            if (context->commandLength < 4) {
-                PRINTF("Missing function selector\n");
-                return CUSTOM_FAULT;
-            }
-        }
-        uint32_t blockSize;
-        uint32_t copySize;
-        uint32_t fieldPos = context->currentFieldPos;
-        if (fieldPos == 0) {
-            if (!N_storage.dataAllowed) {
-                PRINTF("Data field forbidden\n");
-                return CUSTOM_FAULT;
-            }
-            if (!N_storage.contractDetails) {
-                return CUSTOM_NOT_HANDLED;
-            }
-            dataContext.rawDataContext.fieldIndex = 0;
-            dataContext.rawDataContext.fieldOffset = 0;
-            blockSize = 4;
-        }
-        else {
-            blockSize = 32 - dataContext.rawDataContext.fieldOffset;
-        }
-
-        // Sanity check
-        if ((context->currentFieldLength - fieldPos) < blockSize) {
-            PRINTF("Unconsistent data\n");
-            return CUSTOM_FAULT;
-        }
-
-        copySize = (context->commandLength < blockSize ? context->commandLength : blockSize);
-        copyTxData(context,
-                   dataContext.rawDataContext.data + dataContext.rawDataContext.fieldOffset,
-                   copySize);
-
-        if (context->currentFieldPos == context->currentFieldLength) {
-            context->currentField++;
-            context->processingField = false;
-        }
-
-        dataContext.rawDataContext.fieldOffset += copySize;
-
-        if (copySize == blockSize) {
-            // Can display
-            if (fieldPos != 0) {
-                dataContext.rawDataContext.fieldIndex++;
-            }
-            dataContext.rawDataContext.fieldOffset = 0;
-            if (fieldPos == 0) {
-                array_hexstr(strings.tmp.tmp, dataContext.rawDataContext.data, 4);
-                ux_step = 0;
-                ux_step_count = 2;
-                UX_DISPLAY(ui_data_selector_nanos, ui_data_selector_prepro);
-            }
-            else {
-                uint32_t offset = 0;
-                uint32_t i;
-                snprintf(strings.tmp.tmp2, sizeof(strings.tmp.tmp2), "Field %d", dataContext.rawDataContext.fieldIndex);
-                for (i = 0; i < 4; i++) {
-                    offset += splitBinaryParameterPart(strings.tmp.tmp + offset, dataContext.rawDataContext.data + 8 * i);
-                    if (i != 3) {
-                        strings.tmp.tmp[offset++] = ':';
-                    }
-                }
-                ux_step = 0;
-                ux_step_count = 2;
-                UX_DISPLAY(ui_data_parameter_nanos, ui_data_parameter_prepro);
-            }
-        }
-        else {
-            return CUSTOM_HANDLED;
-        }
-        return CUSTOM_SUSPENDED;
-    }
-    return CUSTOM_NOT_HANDLED;
-}
-
 
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
@@ -819,13 +571,6 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     THROW(0x9000);
 }
 
-void finalizeParsing(bool direct) {
-    ux_step = 0;
-    ux_step_count = 5;
-    parseTx(strings.common.fullAddress, strings.common.fullAmount, strings.common.maxFee, tmpCtx.transactionContext.data);
-    UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
-}
-
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
     if (p1 == P1_FIRST) {
@@ -838,7 +583,6 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
         dataLength -= 4;
         tmpCtx.transactionContext.bip32Path[2] += accoutNumber;
         dataPresent = false;
-        initTx(&txContext, &sha3, &tmpContent.txContent, customProcessor, NULL);
         tmpCtx.transactionContext.dataLength = dataLength;
         tmpCtx.transactionContext.data = workBuffer;
     }
@@ -849,12 +593,11 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
     if (p2 != 0) {
         THROW(0x6B00);
     }
-    if (txContext.currentField == TX_RLP_NONE) {
-        PRINTF("Parser not initialized\n");
-        THROW(0x6985);
-    }
 
-    finalizeParsing(true);
+    ux_step = 0;
+    ux_step_count = 5;
+    parseTx(strings.common.fullAddress, strings.common.fullAmount, strings.common.maxFee, tmpCtx.transactionContext.data);
+    UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -966,9 +709,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
         CATCH_OTHER(e) {
         switch (e & 0xF000) {
             case 0x6000:
-                // Wipe the transaction context and report the exception
                 sw = e;
-                os_memset(&txContext, 0, sizeof(txContext));
                 break;
             case 0x9000:
                 // All is well
@@ -1028,7 +769,6 @@ void sample_main(void) {
                     case 0x6000:
                         // Wipe the transaction context and report the exception
                         sw = e;
-                        os_memset(&txContext, 0, sizeof(txContext));
                         break;
                     case 0x9000:
                         // All is well
@@ -1168,8 +908,6 @@ __attribute__((section(".boot"))) int main(int arg0) {
     else {
         chainConfig = (chain_config_t *)PIC(&C_chain_config);
     }
-
-    os_memset(&txContext, 0, sizeof(txContext));
 
     // ensure exception will work as planned
     os_boot();
