@@ -253,6 +253,23 @@ const bagl_element_t ui_address_nanos[] = {
     {{BAGL_LABELINE                       , 0x02,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, (char*)strings.common.fullAddress, 0, 0, 0, NULL, NULL, NULL },
 };
 
+unsigned int ui_address_prepro(const bagl_element_t* element) {
+    if (element->component.userid > 0) {
+        unsigned int display = (ux_step == element->component.userid - 1);
+        if (display) {
+            switch (element->component.userid) {
+                case 1:
+                    UX_CALLBACK_SET_INTERVAL(2000);
+                    break;
+                case 2:
+                    UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
+                    break;
+            }
+        }
+        return display;
+    }
+    return 1;
+}
 
 unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter);
 
@@ -795,7 +812,6 @@ customStatus_e customProcessor(txContext_t *context) {
 
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
-    UNUSED(p1);
     UNUSED(p2);
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
@@ -814,8 +830,19 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     getAeAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address);
 
+  if (p1 == P1_NON_CONFIRM) {
     *tx = set_result_get_publicKey();
     THROW(0x9000);
+  }
+  else
+  {
+    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.publicKeyContext.address);
+    ux_step = 0;
+    ux_step_count = 2;
+    UX_DISPLAY(ui_address_nanos, ui_address_prepro);
+
+    *flags |= IO_ASYNCH_REPLY;
+  }
 }
 
 void finalizeParsing(bool direct) {
