@@ -71,9 +71,9 @@ unsigned int io_seproxyhal_touch_address_cancel(const bagl_element_t *e) {
 
 uint32_t set_result_get_publicKey() {
     uint32_t tx = 0;
-    uint8_t address_size = strlen(tmpCtx.publicKeyContext.address);
+    uint8_t address_size = strlen(tmpCtx.addressContext.address);
     G_io_apdu_buffer[tx++] = address_size;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, address_size);
+    os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
     tx += address_size;
     return tx;
 }
@@ -84,6 +84,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
     cx_ecfp_private_key_t privateKey;
+    cx_ecfp_public_key_t publicKey;
 
     os_memmove(bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
     uint32_t accoutNumber =
@@ -93,10 +94,10 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
     bip32Path[2] += accoutNumber;
     os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
-    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &tmpCtx.publicKeyContext.publicKey, &privateKey, 1);
+    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
     os_memset(&privateKey, 0, sizeof(privateKey));
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
-    getAeAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address);
+    getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
 
   if (p1 == P1_NON_CONFIRM) {
     *tx = set_result_get_publicKey();
@@ -104,7 +105,7 @@ void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t da
   }
   else
   {
-    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.publicKeyContext.address);
+    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.addressContext.address);
     ux_step = 0;
     ux_step_count = 2;
     UX_DISPLAY(ui_address_nanos, ui_address_prepro);

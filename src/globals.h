@@ -30,12 +30,9 @@ extern union stringData{
     strDataTmp_t tmp;
 } strings;
 
-typedef struct publicKeyContext_t {
-    cx_ecfp_public_key_t publicKey;
+typedef struct addressContext_t {
     uint8_t address[FULL_ADDRESS_LENGTH - 3];
-    uint8_t chainCode[32];
-    bool getChaincode;
-} publicKeyContext_t;
+} addressContext_t;
 
 extern ux_state_t ux;
 // display stepped screens
@@ -58,7 +55,7 @@ typedef struct messageSigningContext_t {
 } messageSigningContext_t;
 
 extern union tempContext{
-    publicKeyContext_t publicKeyContext;
+    addressContext_t addressContext;
     transactionContext_t transactionContext;
     messageSigningContext_t messageSigningContext;
 } tmpCtx;
