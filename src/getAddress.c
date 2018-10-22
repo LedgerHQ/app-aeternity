@@ -86,10 +86,7 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
 
-    os_memmove(bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-    uint32_t accountNumber = readUint32BE(dataBuffer);
-    dataBuffer += 4;
-    bip32Path[2] += accountNumber;
+    getBip32Path(readUint32BE(dataBuffer), bip32Path);
     os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
     cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);

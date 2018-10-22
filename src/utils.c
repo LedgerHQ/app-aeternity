@@ -85,6 +85,38 @@ uint32_t readUint32BE(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
 
+const uint32_t HARDENED_OFFSET = 0x80000000;
+
+const uint32_t derivePath[BIP32_PATH] = {
+  44 | HARDENED_OFFSET,
+  457 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET
+};
+
+void getBip32Path(uint32_t accountNumber, uint32_t *out) {
+  os_memmove(out, derivePath, sizeof(derivePath));
+  out[2] = accountNumber | HARDENED_OFFSET;
+}
+
+uint8_t sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *signature) {
+    uint8_t privateKeyData[32];
+    cx_ecfp_private_key_t privateKey;
+    uint32_t bip32Path[BIP32_PATH];
+
+    getBip32Path(tmpCtx.signingContext.accountNumber, bip32Path);
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path,
+                               BIP32_PATH, privateKeyData, NULL);
+    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
+    os_memset(privateKeyData, 0, sizeof(privateKeyData));
+    unsigned int info = 0;
+    return cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
+                         data,
+                         dataLength,
+                         NULL, 0, signature, &info);
+}
+
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
     if (*buffer <= 0x7f) {
     } else if (*buffer <= 0xb7) {
