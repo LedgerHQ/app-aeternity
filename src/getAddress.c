@@ -34,18 +34,13 @@ static unsigned int ui_address_prepro(const bagl_element_t* element) {
     return 1;
 }
 
-static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
-    switch(button_mask) {
-        case BUTTON_EVT_RELEASED|BUTTON_LEFT: // CANCEL
-            io_seproxyhal_touch_address_cancel(NULL);
-            break;
-
-        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
-            io_seproxyhal_touch_address_ok(NULL);
-            break;
-        }
-    }
-    return 0;
+uint32_t set_result_get_publicKey() {
+    uint32_t tx = 0;
+    uint8_t address_size = strlen(tmpCtx.addressContext.address);
+    G_io_apdu_buffer[tx++] = address_size;
+    os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
+    tx += address_size;
+    return tx;
 }
 
 unsigned int io_seproxyhal_touch_address_ok(const bagl_element_t *e) {
@@ -69,13 +64,18 @@ unsigned int io_seproxyhal_touch_address_cancel(const bagl_element_t *e) {
     return 0; // do not redraw the widget
 }
 
-uint32_t set_result_get_publicKey() {
-    uint32_t tx = 0;
-    uint8_t address_size = strlen(tmpCtx.addressContext.address);
-    G_io_apdu_buffer[tx++] = address_size;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
-    tx += address_size;
-    return tx;
+static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    switch(button_mask) {
+        case BUTTON_EVT_RELEASED|BUTTON_LEFT: // CANCEL
+            io_seproxyhal_touch_address_cancel(NULL);
+            break;
+
+        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
+            io_seproxyhal_touch_address_ok(NULL);
+            break;
+        }
+    }
+    return 0;
 }
 
 void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
