@@ -20,30 +20,27 @@ $(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-DEFINES_LIB = USE_LIB_ETHEREUM
-APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS) 
+APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=1
 APPVERSION_N=1
 APPVERSION_P=4
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-APP_LOAD_FLAGS= --appFlags 0x40 --dep Ethereum:$(APPVERSION)
+APP_LOAD_FLAGS= --appFlags 0x40 --dep Aternity:$(APPVERSION)
 
 ifeq ($(CHAIN),)
-CHAIN=ethereum
+CHAIN=aternity
 endif
 
-ifeq ($(CHAIN),ethereum)
+ifeq ($(CHAIN),aternity)
 #TODO : Fix in 1.4.3
 #APP_LOAD_PARAMS += --path "44'/60'"
 APP_LOAD_PARAMS += --path "44'"
-DEFINES += CHAINID_UPCASE=\"ETHEREUM\" CHAINID_COINNAME=\"ETH\" CHAIN_KIND=CHAIN_KIND_ETHEREUM CHAIN_ID=0
 APPNAME = "Aeternity"
-DEFINES_LIB=
 APP_LOAD_FLAGS=--appFlags 0x840
 else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported CHAIN - use ethereum, ethereum_classic, expanse, poa, rsk, rsk_testnet, ubiq, wanchain, kusd, musicoin, pirl, akroma, atheios, callisto, ethersocial, ellaism, ether1, ethergem, gochain, eosclassic)
+$(error Unsupported CHAIN - use aternity)
 endif
 endif
 
@@ -115,7 +112,7 @@ LDLIBS   += -lm -lgcc -lc
 include $(BOLOS_SDK)/Makefile.glyphs
 
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
-APP_SOURCE_PATH  += src_genericwallet src_common src
+APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 
 load: all
@@ -131,4 +128,4 @@ include $(BOLOS_SDK)/Makefile.rules
 dep/%.d: %.c Makefile
 
 listvariants:
-	@echo VARIANTS CHAIN ethereum ethereum_classic expanse poa rsk rsk_testnet ubiq wanchain kusd pirl akroma # musicoin atheios callisto ethersocial ellaism   ether1 ethergem gochain eosclassic
+	@echo VARIANTS CHAIN aeternity
