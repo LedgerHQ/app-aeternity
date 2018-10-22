@@ -81,6 +81,10 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
     address[encodeBase58(buffer, 36, address, 51)] = '\0';
 }
 
+uint32_t readUint32BE(uint8_t *buffer) {
+  return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+}
+
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
     if (*buffer <= 0x7f) {
     } else if (*buffer <= 0xb7) {
