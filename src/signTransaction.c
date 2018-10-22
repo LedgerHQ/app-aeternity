@@ -126,10 +126,9 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
         tmpCtx.transactionContext.dataLength = dataLength;
         tmpCtx.transactionContext.data = workBuffer;
     }
-    else
-        if (p1 != P1_MORE) {
-            THROW(0x6B00);
-        }
+    else if (p1 != P1_MORE) {
+        THROW(0x6B00);
+    }
     if (p2 != 0) {
         THROW(0x6B00);
     }
