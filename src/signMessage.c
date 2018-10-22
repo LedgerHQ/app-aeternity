@@ -89,10 +89,10 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
     uint8_t messageLength;
     if (p1 == P1_FIRST) {
         os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-        uint32_t accoutNumber = readUint32BE(workBuffer);
+        uint32_t accountNumber = readUint32BE(workBuffer);
         workBuffer += 4;
         dataLength -= 4;
-        tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
+        tmpCtx.messageSigningContext.bip32Path[2] += accountNumber;
         tmpCtx.messageSigningContext.remainingLength = readUint32BE(workBuffer);
         workBuffer += 4;
         dataLength -= 4;

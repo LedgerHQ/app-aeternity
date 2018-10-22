@@ -118,10 +118,10 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
     if (p1 == P1_FIRST) {
         tmpCtx.transactionContext.pathLength = BIP32_PATH;
         os_memmove(tmpCtx.transactionContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-        uint32_t accoutNumber = readUint32BE(workBuffer);
+        uint32_t accountNumber = readUint32BE(workBuffer);
         workBuffer += 4;
         dataLength -= 4;
-        tmpCtx.transactionContext.bip32Path[2] += accoutNumber;
+        tmpCtx.transactionContext.bip32Path[2] += accountNumber;
         dataPresent = false;
         tmpCtx.transactionContext.dataLength = dataLength;
         tmpCtx.transactionContext.data = workBuffer;
