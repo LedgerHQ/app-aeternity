@@ -1,4 +1,3 @@
-#include "signMessage.h"
 #include "getAddress.h"
 
 const bagl_element_t ui_address_nanos[] = {
