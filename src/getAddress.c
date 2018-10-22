@@ -33,7 +33,7 @@ static unsigned int ui_address_prepro(const bagl_element_t* element) {
     return 1;
 }
 
-uint32_t set_result_get_publicKey() {
+uint32_t set_result_get_address() {
     uint32_t tx = 0;
     uint8_t address_size = strlen(tmpCtx.addressContext.address);
     G_io_apdu_buffer[tx++] = address_size;
@@ -43,7 +43,7 @@ uint32_t set_result_get_publicKey() {
 }
 
 unsigned int io_seproxyhal_touch_address_ok(const bagl_element_t *e) {
-    uint32_t tx = set_result_get_publicKey();
+    uint32_t tx = set_result_get_address();
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
     // Send back the response, do not restart the event loop
@@ -77,7 +77,7 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
     return 0;
 }
 
-void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
     UNUSED(p2);
     uint8_t privateKeyData[32];
