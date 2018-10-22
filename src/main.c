@@ -15,7 +15,7 @@
 *  limitations under the License.
 ********************************************************************************/
 
-#include "aeUtils.h"
+#include "utils.h"
 #include "signMessage.h"
 #include "signTransaction.h"
 #include "getAddress.h"

@@ -2,7 +2,7 @@
 #include "cx.h"
 #include <stdbool.h>
 #include <stdlib.h>
-#include "aeUtils.h"
+#include "utils.h"
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1

@@ -1,5 +1,5 @@
 #include "signMessage.h"
-#include "aeUtils.h"
+#include "utils.h"
 
 const bagl_element_t ui_approval_signMessage_nanos[] = {
     // type                               userid    x    y   w    h  str rad fill      fg        bg      fid iid  txt   touchparams...       ]
