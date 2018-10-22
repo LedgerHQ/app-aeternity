@@ -98,17 +98,15 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
 
-  if (p1 == P1_NON_CONFIRM) {
-    *tx = set_result_get_publicKey();
-    THROW(0x9000);
-  }
-  else
-  {
-    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.addressContext.address);
-    ux_step = 0;
-    ux_step_count = 2;
-    UX_DISPLAY(ui_address_nanos, ui_address_prepro);
+    if (p1 == P1_NON_CONFIRM) {
+        *tx = set_result_get_address();
+        THROW(0x9000);
+    } else {
+        snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.addressContext.address);
+        ux_step = 0;
+        ux_step_count = 2;
+        UX_DISPLAY(ui_address_nanos, ui_address_prepro);
 
-    *flags |= IO_ASYNCH_REPLY;
-  }
+        *flags |= IO_ASYNCH_REPLY;
+    }
 }
