@@ -1,5 +1,5 @@
-#include "signMessage.h"
 #include "getAddress.h"
+#include "utils.h"
 
 const bagl_element_t ui_address_nanos[] = {
     // type                               userid    x    y   w    h  str rad fill      fg        bg      fid iid  txt   touchparams...       ]
@@ -34,22 +34,17 @@ static unsigned int ui_address_prepro(const bagl_element_t* element) {
     return 1;
 }
 
-static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
-    switch(button_mask) {
-        case BUTTON_EVT_RELEASED|BUTTON_LEFT: // CANCEL
-            io_seproxyhal_touch_address_cancel(NULL);
-            break;
-
-        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
-            io_seproxyhal_touch_address_ok(NULL);
-            break;
-        }
-    }
-    return 0;
+uint32_t set_result_get_address() {
+    uint32_t tx = 0;
+    uint8_t address_size = strlen(tmpCtx.addressContext.address);
+    G_io_apdu_buffer[tx++] = address_size;
+    os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
+    tx += address_size;
+    return tx;
 }
 
 unsigned int io_seproxyhal_touch_address_ok(const bagl_element_t *e) {
-    uint32_t tx = set_result_get_publicKey();
+    uint32_t tx = set_result_get_address();
     G_io_apdu_buffer[tx++] = 0x90;
     G_io_apdu_buffer[tx++] = 0x00;
     // Send back the response, do not restart the event loop
@@ -69,46 +64,48 @@ unsigned int io_seproxyhal_touch_address_cancel(const bagl_element_t *e) {
     return 0; // do not redraw the widget
 }
 
-uint32_t set_result_get_publicKey() {
-    uint32_t tx = 0;
-    uint8_t address_size = strlen(tmpCtx.publicKeyContext.address);
-    G_io_apdu_buffer[tx++] = address_size;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.publicKeyContext.address, address_size);
-    tx += address_size;
-    return tx;
+static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    switch(button_mask) {
+        case BUTTON_EVT_RELEASED|BUTTON_LEFT: // CANCEL
+            io_seproxyhal_touch_address_cancel(NULL);
+            break;
+
+        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
+            io_seproxyhal_touch_address_ok(NULL);
+            break;
+        }
+    }
+    return 0;
 }
 
-void handleGetPublicKey(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
     UNUSED(p2);
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
     cx_ecfp_private_key_t privateKey;
+    cx_ecfp_public_key_t publicKey;
 
     os_memmove(bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-    uint32_t accoutNumber =
-        (dataBuffer[0] << 24) | (dataBuffer[1] << 16) |
-        (dataBuffer[2] << 8) | (dataBuffer[3]);
+    uint32_t accountNumber = readUint32BE(dataBuffer);
     dataBuffer += 4;
-    bip32Path[2] += accoutNumber;
+    bip32Path[2] += accountNumber;
     os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
-    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &tmpCtx.publicKeyContext.publicKey, &privateKey, 1);
+    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
     os_memset(&privateKey, 0, sizeof(privateKey));
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
-    getAeAddressStringFromKey(&tmpCtx.publicKeyContext.publicKey, tmpCtx.publicKeyContext.address);
+    getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
 
-  if (p1 == P1_NON_CONFIRM) {
-    *tx = set_result_get_publicKey();
-    THROW(0x9000);
-  }
-  else
-  {
-    snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.publicKeyContext.address);
-    ux_step = 0;
-    ux_step_count = 2;
-    UX_DISPLAY(ui_address_nanos, ui_address_prepro);
+    if (p1 == P1_NON_CONFIRM) {
+        *tx = set_result_get_address();
+        THROW(0x9000);
+    } else {
+        snprintf(strings.common.fullAddress, sizeof(strings.common.fullAddress), "ak_%.*s", FULL_ADDRESS_LENGTH ,tmpCtx.addressContext.address);
+        ux_step = 0;
+        ux_step_count = 2;
+        UX_DISPLAY(ui_address_nanos, ui_address_prepro);
 
-    *flags |= IO_ASYNCH_REPLY;
-  }
+        *flags |= IO_ASYNCH_REPLY;
+    }
 }

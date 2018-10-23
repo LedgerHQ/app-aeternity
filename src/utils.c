@@ -2,7 +2,7 @@
 #include "cx.h"
 #include <stdbool.h>
 #include <stdlib.h>
-#include "aeUtils.h"
+#include "utils.h"
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
@@ -79,6 +79,10 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
     os_memmove(buffer + 32, hashAddress, 4);
 
     address[encodeBase58(buffer, 36, address, 51)] = '\0';
+}
+
+uint32_t readUint32BE(uint8_t *buffer) {
+  return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
 
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {

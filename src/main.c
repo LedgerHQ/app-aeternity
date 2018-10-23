@@ -15,7 +15,7 @@
 *  limitations under the License.
 ********************************************************************************/
 
-#include "aeUtils.h"
+#include "utils.h"
 #include "signMessage.h"
 #include "signTransaction.h"
 #include "getAddress.h"
@@ -26,7 +26,7 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 unsigned int io_seproxyhal_touch_exit(const bagl_element_t *e);
 
 #define CLA 0xE0
-#define INS_GET_PUBLIC_KEY 0x02
+#define INS_GET_ADDRESS 0x02
 #define INS_SIGN 0x04
 #define INS_GET_APP_CONFIGURATION 0x06
 #define INS_SIGN_PERSONAL_MESSAGE 0x08
@@ -48,8 +48,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
             }
 
             switch (G_io_apdu_buffer[OFFSET_INS]) {
-                case INS_GET_PUBLIC_KEY:
-                    handleGetPublicKey(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                case INS_GET_ADDRESS:
+                    handleGetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
                 case INS_SIGN:

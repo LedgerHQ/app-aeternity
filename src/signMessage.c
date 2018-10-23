@@ -1,4 +1,5 @@
 #include "signMessage.h"
+#include "utils.h"
 
 const bagl_element_t ui_approval_signMessage_nanos[] = {
     // type                               userid    x    y   w    h  str rad fill      fg        bg      fid iid  txt   touchparams...       ]
@@ -88,15 +89,11 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
     uint8_t messageLength;
     if (p1 == P1_FIRST) {
         os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-        uint32_t accoutNumber =
-            (workBuffer[0] << 24) | (workBuffer[1] << 16) |
-            (workBuffer[2] << 8) | (workBuffer[3]);
+        uint32_t accountNumber = readUint32BE(workBuffer);
         workBuffer += 4;
         dataLength -= 4;
-        tmpCtx.messageSigningContext.bip32Path[2] += accoutNumber;
-        tmpCtx.messageSigningContext.remainingLength =
-            (workBuffer[0] << 24) | (workBuffer[1] << 16) |
-            (workBuffer[2] << 8) | (workBuffer[3]);
+        tmpCtx.messageSigningContext.bip32Path[2] += accountNumber;
+        tmpCtx.messageSigningContext.remainingLength = readUint32BE(workBuffer);
         workBuffer += 4;
         dataLength -= 4;
         uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;

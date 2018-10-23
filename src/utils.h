@@ -16,4 +16,6 @@ void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, uint8_t *address
 
 void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address);
 
+uint32_t readUint32BE(uint8_t *buffer);
+
 void parseTx(char *address, char *amount, char *fee, uint8_t *data);
