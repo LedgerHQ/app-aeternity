@@ -17,11 +17,9 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
 import argparse
 import struct
-from aeBase import Transaction
+from aeBase import Transaction, Request, sendApdu
 from rlp import encode
 
 parser = argparse.ArgumentParser()
@@ -60,9 +58,7 @@ else:
     encodedTx = encode(tx, Transaction)
 
 accNumber = struct.pack(">I", int(args.acc))
-apdu = "e0040000".decode('hex') + chr(len(encodedTx) + len(accNumber)) + accNumber + encodedTx
-dongle = getDongle(True)
-result = dongle.exchange(bytes(apdu))
+result = sendApdu(Request['SignTx'], Request['NoneVerify'], accNumber, encodedTx)
 
 signature = result[0: 1 + 32 + 32]
 print "Signature " + ''.join(format(x, '02x') for x in signature)

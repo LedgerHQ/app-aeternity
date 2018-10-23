@@ -17,8 +17,7 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
+from aeBase import Request, sendApdu
 import argparse
 import struct
 
@@ -28,15 +27,11 @@ parser.add_argument('--message', help="Message to be sign")
 args = parser.parse_args()
 
 if args.acc == None:
-	args.acc = 0
+    args.acc = 0
 
 accNumber = struct.pack(">I", int(args.acc))
 messageLength = struct.pack(">I", len(args.message))
-apdu = "e0080000".decode('hex') + chr(len(args.message) + len(accNumber) 
-       + len(messageLength)) + accNumber + messageLength + args.message
-
-dongle = getDongle(True)
-result = dongle.exchange(bytes(apdu))
+result = sendApdu(Request['SignMessage'], Request['NoneVerify'], accNumber, messageLength, args.message)
 
 signature = result[0: 1 + 32 + 32]
 print "Signature " + ''.join(format(x, '02x') for x in signature)

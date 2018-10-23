@@ -17,13 +17,8 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
+from aeBase import Request, sendApdu
 
-apdu = "e0060000".decode('hex') 
-
-dongle = getDongle(True)
-result = dongle.exchange(bytes(apdu))
-
+result = sendApdu(Request['GetConfig'], Request['NoneVerify'])
 print "arbitraryDataEnabled " + str(result[0])
 print 'version {0}.{1}.{2}'.format(*result[1:])

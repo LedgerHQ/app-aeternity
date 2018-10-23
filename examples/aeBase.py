@@ -17,24 +17,40 @@
 *  limitations under the License.
 ********************************************************************************
 """
-
+from ledgerblue.comm import getDongle
+from ledgerblue.commException import CommException
 from rlp.sedes import big_endian_int, binary, Binary
 from rlp import Serializable
+
+Request = { 'NoneVerify' : 0,  'Verify' : 1, 'GetKey' : 2, 'SignTx' : 4, 'GetConfig' : 6, 'SignMessage' : 8 }
 
 address = Binary.fixed_length(33, allow_empty=True)
 
 class Transaction(Serializable):
-	fields = [
+    fields = [
         ('type', big_endian_int),
-		('id', big_endian_int),
-		('sender', address),
-		('recipient', address),
-		('amount', big_endian_int),
-		('fee', big_endian_int),
-		('ttl', big_endian_int),
-		('nonce', big_endian_int),
+        ('id', big_endian_int),
+        ('sender', address),
+        ('recipient', address),
+        ('amount', big_endian_int),
+        ('fee', big_endian_int),
+        ('ttl', big_endian_int),
+        ('nonce', big_endian_int),
         ('payload', binary)
-	]
+    ]
 
-	def __init__(self, sender, recipient, amount, fee, ttl, nonce, payload, type=12, id=1):
-		super(Transaction, self).__init__(type, id, sender, recipient, amount, fee, ttl, nonce, payload)
+    def __init__(self, sender, recipient, amount, fee, ttl, nonce, payload, type=12, id=1):
+        super(Transaction, self).__init__(type, id, sender, recipient, amount, fee, ttl, nonce, payload)
+
+def sendApdu(*arg):
+    argLength = len(arg)
+    apdu = ("e00" + str(arg[0]) + "0" + str(arg[1]) + "00").decode('hex')
+    if argLength > 2:
+        length = 0
+        data = ""
+        for i in range(2, argLength):
+            length += len(arg[i])
+            data += arg[i]
+        apdu += chr(length) + data
+    dongle = getDongle(True)
+    return dongle.exchange(bytes(apdu))

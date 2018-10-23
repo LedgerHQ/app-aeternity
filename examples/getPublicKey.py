@@ -17,8 +17,7 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
+from aeBase import Request, sendApdu
 import argparse
 import struct
 
@@ -30,10 +29,8 @@ if args.acc == None:
     args.acc = 0
 
 accNumber = struct.pack(">I", int(args.acc))
-apdu = "e0020100".decode('hex') + chr(len(accNumber)) + accNumber
+result = sendApdu(Request['GetKey'], Request['Verify'], accNumber)
 
-dongle = getDongle(True)
-result = dongle.exchange(bytes(apdu))
 address = result[1 : 1 + result[0]]
 
 print "Address ak_" + str(address)
