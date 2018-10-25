@@ -17,7 +17,7 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from aeBase import Request, sendApdu
+from base import Request, sendApdu
 
 result = sendApdu(Request['GetConfig'], Request['NoneVerify'])
 print "arbitraryDataEnabled " + str(result[0])

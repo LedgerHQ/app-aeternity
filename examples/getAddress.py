@@ -17,7 +17,7 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from aeBase import Request, sendApdu
+from base import Request, sendApdu
 import argparse
 import struct
 

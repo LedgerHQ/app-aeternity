@@ -19,7 +19,7 @@
 """
 import argparse
 import struct
-from aeBase import Transaction, Request, sendApdu
+from base import Transaction, Request, sendApdu
 from rlp import encode
 
 parser = argparse.ArgumentParser()
