@@ -17,33 +17,17 @@
 *  limitations under the License.
 ********************************************************************************
 """
-from ledgerblue.comm import getDongle
-from ledgerblue.commException import CommException
+from base import Request, sendApdu
 import argparse
 import struct
 
-def parse_bip32_path(path):
-	if len(path) == 0:
-		return ""
-	result = ""
-	elements = path.split('/')
-	for pathElement in elements:
-		element = pathElement.split('\'')
-		if len(element) == 1:
-			result = result + struct.pack(">I", int(element[0]))			
-		else:
-			result = result + struct.pack(">I", 0x80000000 | int(element[0]))
-	return result
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', help="BIP 32 path to retrieve")
+parser.add_argument('--acc', help="Account number to retrieve", default=0)
 args = parser.parse_args()
 
-if args.path == None:
-	args.path = "44'/60'/0'/0/0"
+accNumber = struct.pack(">I", int(args.acc))
+result = sendApdu(Request['GetKey'], Request['Verify'], accNumber)
 
-donglePath = parse_bip32_path(args.path)
-apdu = "e0060000".decode('hex') + chr(len(donglePath) + 1) + chr(len(donglePath) / 4) + donglePath
+address = result[1 : 1 + result[0]]
 
-dongle = getDongle(True)
-dongle.exchange(bytes(apdu))
+print "Address ak_" + str(address)
