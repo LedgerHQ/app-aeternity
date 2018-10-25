@@ -81,17 +81,12 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
     UNUSED(p2);
-    uint8_t privateKeyData[32];
-    uint32_t bip32Path[BIP32_PATH];
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
 
-    getBip32Path(readUint32BE(dataBuffer), bip32Path);
-    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
+    getPrivateKey(readUint32BE(dataBuffer), &privateKey);
     cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
     os_memset(&privateKey, 0, sizeof(privateKey));
-    os_memset(privateKeyData, 0, sizeof(privateKeyData));
     getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
 
     if (p1 == P1_NON_CONFIRM) {
