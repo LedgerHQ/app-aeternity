@@ -76,7 +76,6 @@ static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned 
 
 unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
     sign(
-        tmpCtx.signingContext.accountNumber,
         tmpCtx.signingContext.data,
         tmpCtx.signingContext.dataLength,
         G_io_apdu_buffer

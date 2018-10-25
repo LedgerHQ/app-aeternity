@@ -65,7 +65,6 @@ unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     messageLength += tmpCtx.signingContext.dataLength;
 
     sign(
-        tmpCtx.signingContext.accountNumber,
         message,
         messageLength,
         G_io_apdu_buffer

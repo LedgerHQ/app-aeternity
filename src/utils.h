@@ -19,7 +19,7 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address);
 
 uint32_t readUint32BE(uint8_t *buffer);
 
-uint8_t sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *signature);
+void sign(uint8_t *data, uint32_t dataLength, uint8_t *signature);
 
 void getBip32Path(uint32_t accountNumber, uint32_t *out);
 

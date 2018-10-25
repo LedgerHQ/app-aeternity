@@ -100,9 +100,10 @@ void getBip32Path(uint32_t accountNumber, uint32_t *out) {
   out[2] = accountNumber | HARDENED_OFFSET;
 }
 
-uint8_t sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *signature) {
+void sign(uint8_t *data, uint32_t dataLength, uint8_t *out) {
     uint8_t privateKeyData[32];
     cx_ecfp_private_key_t privateKey;
+    uint8_t signature[64];
     uint32_t bip32Path[BIP32_PATH];
 
     getBip32Path(tmpCtx.signingContext.accountNumber, bip32Path);
@@ -111,10 +112,11 @@ uint8_t sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
     unsigned int info = 0;
-    return cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
+    cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
                          data,
                          dataLength,
                          NULL, 0, signature, &info);
+    os_memmove(out, signature, 64);
 }
 
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
