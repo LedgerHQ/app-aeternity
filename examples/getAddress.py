@@ -22,11 +22,8 @@ import argparse
 import struct
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--acc', help="Account number to retrieve")
+parser.add_argument('--acc', help="Account number to retrieve", default=0)
 args = parser.parse_args()
-
-if args.acc == None:
-    args.acc = 0
 
 accNumber = struct.pack(">I", int(args.acc))
 result = sendApdu(Request['GetKey'], Request['Verify'], accNumber)

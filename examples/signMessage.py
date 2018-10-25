@@ -22,12 +22,9 @@ import argparse
 import struct
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--acc', help="Account number to sign with")
-parser.add_argument('--message', help="Message to be sign")
+parser.add_argument('--acc', help="Account number to sign with", default=0)
+parser.add_argument('--message', help="Message to be sign", default="test message")
 args = parser.parse_args()
-
-if args.acc == None:
-    args.acc = 0
 
 accNumber = struct.pack(">I", int(args.acc))
 messageLength = struct.pack(">I", len(args.message))
