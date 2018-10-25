@@ -21,34 +21,28 @@ import argparse
 import struct
 from base import Transaction, Request, sendApdu
 from rlp import encode
+from base58 import b58decode_check
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sender', help="Sender address")
-parser.add_argument('--recipient', help="Recipient address")
-parser.add_argument('--amount', help="Amount to send")
-parser.add_argument('--fee', help="fee", default='1')
-parser.add_argument('--ttl', help="ttl")
-parser.add_argument('--nonce', help="Nonce associated to the account")
-parser.add_argument('--payload', help="Payload")
-parser.add_argument('--acc', help="Account number to sign with")
+parser.add_argument('--sender', help="Sender address", default="ak_2swhLkgBPeeADxVTAVCJnZLY5NZtCFiM93JxsEaMuC59euuFRQ")
+parser.add_argument('--recipient', help="Recipient address", default="ak_DzELMKnSfJcfnCUZ2SbXUSxRmFYtGrWmMuKiCx68YKLH26kwc")
+parser.add_argument('--amount', help="Amount to send", default=1000000000)
+parser.add_argument('--fee', help="fee", default=1)
+parser.add_argument('--ttl', help="ttl", default=9007199254740991)
+parser.add_argument('--nonce', help="Nonce associated to the account", default=0)
+parser.add_argument('--payload', help="Payload", default="")
+parser.add_argument('--acc', help="Account number to sign with", default=0)
 parser.add_argument('--tx', help="Hex encoded transaction")
 args = parser.parse_args()
 
-if args.acc == None:
-    args.acc = 0
-
-if args.sender == None:
-    args.tx = "f8560c01a101f75e53f57822227a58b463095d6dab657cab804574be62de0be1f95279d09037a1011d7ce9bcf06e93c844c02489862b623c23b14a7364350a36336c87bc76b6650a843b9aca0001871fffffffffffff0780"
-
-if args.payload == None:
-    args.payload = ""
+addressPrefix = '01'.decode('hex')
 
 if args.tx != None:
     encodedTx = args.tx.decode('hex')
 else:
     tx = Transaction(
-        sender=args.sender.decode('hex'),
-        recipient=args.recipient.decode('hex'),
+        sender=addressPrefix + b58decode_check(args.sender[3:]),
+        recipient=addressPrefix + b58decode_check(args.recipient[3:]),
         fee=int(args.fee),
         amount=int(args.amount),
         ttl=int(args.ttl),
