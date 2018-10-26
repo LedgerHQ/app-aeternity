@@ -67,7 +67,8 @@ static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     cx_hash_sha256(hashAddress, 32, hashAddress);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    address[encodeBase58(buffer, 36, (unsigned char*)address, 51)] = '\0';
+    snprintf(address, sizeof(address), "ak_");
+    address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
 }
 
 void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
@@ -285,11 +286,8 @@ void parseTx(char *address, char *amount, char *fee, uint8_t *data) {
                     THROW(0x6A80);
                 }
                 data++;
-                address[0] = 'a';
-                address[1] = 'k';
-                address[2] = '_';
                 os_memmove(publicKey, data, 32);
-                getAeAddressStringFromBinary(publicKey, address + 3);
+                getAeAddressStringFromBinary(publicKey, address);
                 data += 32;
                 break;
             case TX_AMOUNT:

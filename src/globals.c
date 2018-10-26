@@ -6,4 +6,4 @@ unsigned int ux_step_count;
 
 union tempContext tmpCtx;
 WIDE internalStorage_t N_storage_real;
-union stringData strings;
+struct strData_t strings;

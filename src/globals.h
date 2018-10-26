@@ -12,24 +12,14 @@
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
 
-typedef struct strData_t {
-    char fullAddress[FULL_ADDRESS_LENGTH];
+extern struct strData_t {
+    char recipientAddress[FULL_ADDRESS_LENGTH];
     char fullAmount[50];
     char maxFee[50];
-} strData_t;
-
-typedef struct strDataTmp_t {
-    char tmp[100];
-    char tmp2[40];
-} strDataTmp_t;
-
-extern union stringData{
-    strData_t common;
-    strDataTmp_t tmp;
 } strings;
 
 typedef struct addressContext_t {
-    char address[FULL_ADDRESS_LENGTH - 3];
+    char address[FULL_ADDRESS_LENGTH];
 } addressContext_t;
 
 extern ux_state_t ux;

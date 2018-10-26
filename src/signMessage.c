@@ -13,7 +13,7 @@ const bagl_element_t ui_approval_signMessage_nanos[] = {
     {{BAGL_LABELINE                       , 0x01,   0,  26, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "message", 0, 0, 0, NULL, NULL, NULL },
 
     {{BAGL_LABELINE                       , 0x02,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Message hash", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE                       , 0x02,   0,  26, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, strings.common.fullAddress, 0, 0, 0, NULL, NULL, NULL },
+    {{BAGL_LABELINE                       , 0x02,   0,  26, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, strings.recipientAddress, 0, 0, 0, NULL, NULL, NULL },
 };
 
 static unsigned int ui_approval_signMessage_prepro(const bagl_element_t *element) {
@@ -88,7 +88,7 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
     tmpCtx.signingContext.dataLength = dataLength;
     tmpCtx.signingContext.data = workBuffer;
 
-    strings.common.fullAddress[0] = '\0';
+    strings.recipientAddress[0] = '\0';
     ux_step = 0;
     ux_step_count = 2;
     UX_DISPLAY(ui_approval_signMessage_nanos, ui_approval_signMessage_prepro);
