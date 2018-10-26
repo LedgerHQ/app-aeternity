@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "utils.h"
+#include "menu.h"
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
@@ -117,6 +118,15 @@ void sign(uint8_t *data, uint32_t dataLength, uint8_t *out) {
                          dataLength,
                          NULL, 0, signature, &info);
     os_memmove(out, signature, 64);
+}
+
+void sendResponse(uint8_t tx, bool approve){
+    G_io_apdu_buffer[tx++] = approve? 0x90 : 0x69;
+    G_io_apdu_buffer[tx++] = approve? 0x00 : 0x85;
+    // Send back the response, do not restart the event loop
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
+    // Display back the original UX
+    ui_idle();
 }
 
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {

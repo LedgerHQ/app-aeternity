@@ -63,41 +63,20 @@ static unsigned int ui_approval_prepro(const bagl_element_t* element) {
 static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch(button_mask) {
         case BUTTON_EVT_RELEASED|BUTTON_LEFT:
-            io_seproxyhal_touch_tx_cancel(NULL);
+            sendResponse(0, false);
             break;
 
         case BUTTON_EVT_RELEASED|BUTTON_RIGHT: {
-            io_seproxyhal_touch_tx_ok(NULL);
+            sign(
+                tmpCtx.signingContext.data,
+                tmpCtx.signingContext.dataLength,
+                G_io_apdu_buffer
+            );
+            sendResponse(64, true);
             break;
         }
     }
     return 0;
-}
-
-unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
-    sign(
-        tmpCtx.signingContext.data,
-        tmpCtx.signingContext.dataLength,
-        G_io_apdu_buffer
-    );
-    uint8_t tx = 64;
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
-unsigned int io_seproxyhal_touch_tx_cancel(const bagl_element_t *e) {
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
 }
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {

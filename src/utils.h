@@ -24,3 +24,5 @@ void sign(uint8_t *data, uint32_t dataLength, uint8_t *signature);
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 
 void parseTx(char *address, char *amount, char *fee, uint8_t *data);
+
+void sendResponse(uint8_t tx, bool approve);
