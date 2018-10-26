@@ -37,25 +37,15 @@ extern ux_state_t ux;
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
 
-typedef struct transactionContext_t {
-    uint8_t pathLength;
-    uint32_t bip32Path[BIP32_PATH];
+typedef struct signingContext_t {
+    uint32_t accountNumber;
     uint8_t *data;
-    uint8_t dataLength;
-} transactionContext_t;
-
-typedef struct messageSigningContext_t {
-    uint8_t pathLength;
-    uint32_t bip32Path[BIP32_PATH];
-    uint8_t data[0xFD + 26 + 2];
-    uint32_t remainingLength;
     uint32_t dataLength;
-} messageSigningContext_t;
+} signingContext_t;
 
 extern union tempContext{
     addressContext_t addressContext;
-    transactionContext_t transactionContext;
-    messageSigningContext_t messageSigningContext;
+    signingContext_t signingContext;
 } tmpCtx;
 
 typedef struct internalStorage_t {
@@ -63,11 +53,6 @@ typedef struct internalStorage_t {
     unsigned char contractDetails;
     uint8_t initialized;
 } internalStorage_t;
-
-extern const uint32_t HARDENED_OFFSET;
-extern const uint32_t derivePath[BIP32_PATH];
-
-static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
 
 extern WIDE internalStorage_t N_storage_real;
 #define N_storage (*(WIDE internalStorage_t*) PIC(&N_storage_real))

@@ -63,79 +63,38 @@ static unsigned int ui_approval_prepro(const bagl_element_t* element) {
 static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch(button_mask) {
         case BUTTON_EVT_RELEASED|BUTTON_LEFT:
-            io_seproxyhal_touch_tx_cancel(NULL);
+            sendResponse(0, false);
             break;
 
         case BUTTON_EVT_RELEASED|BUTTON_RIGHT: {
-            io_seproxyhal_touch_tx_ok(NULL);
+            sign(
+                tmpCtx.signingContext.data,
+                tmpCtx.signingContext.dataLength,
+                G_io_apdu_buffer
+            );
+            sendResponse(64, true);
             break;
         }
     }
     return 0;
 }
 
-unsigned int io_seproxyhal_touch_tx_ok(const bagl_element_t *e) {
-    uint8_t privateKeyData[32];
-    uint8_t signature[100];
-    uint8_t signatureLength;
-    cx_ecfp_private_key_t privateKey;
-    uint32_t tx = 0;
-    os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.transactionContext.bip32Path,
-                               tmpCtx.transactionContext.pathLength,
-                               privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
-    os_memset(privateKeyData, 0, sizeof(privateKeyData));
-    unsigned int info = 0;
-    signatureLength =
-        cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
-                      tmpCtx.transactionContext.data,
-                      tmpCtx.transactionContext.dataLength, NULL, 0, signature, &info);
-    os_memset(&privateKey, 0, sizeof(privateKey));
-    os_memmove(G_io_apdu_buffer, signature, 64);
-    tx = 64;
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
-send:
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
-unsigned int io_seproxyhal_touch_tx_cancel(const bagl_element_t *e) {
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    if (p1 == P1_FIRST) {
-        tmpCtx.transactionContext.pathLength = BIP32_PATH;
-        os_memmove(tmpCtx.transactionContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-        uint32_t accountNumber = readUint32BE(workBuffer);
-        workBuffer += 4;
-        dataLength -= 4;
-        tmpCtx.transactionContext.bip32Path[2] += accountNumber;
-        dataPresent = false;
-        tmpCtx.transactionContext.dataLength = dataLength;
-        tmpCtx.transactionContext.data = workBuffer;
-    }
-    else if (p1 != P1_MORE) {
+    if (p1 != P1_FIRST || p2 != 0) {
         THROW(0x6B00);
     }
-    if (p2 != 0) {
-        THROW(0x6B00);
-    }
+
+    tmpCtx.signingContext.accountNumber = readUint32BE(workBuffer);
+    workBuffer += 4;
+    dataLength -= 4;
+    dataPresent = false;
+    tmpCtx.signingContext.dataLength = dataLength;
+    tmpCtx.signingContext.data = workBuffer;
 
     ux_step = 0;
     ux_step_count = 5;
-    parseTx(strings.common.fullAddress, strings.common.fullAmount, strings.common.maxFee, tmpCtx.transactionContext.data);
+    parseTx(strings.common.fullAddress, strings.common.fullAmount, strings.common.maxFee, tmpCtx.signingContext.data);
     UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }

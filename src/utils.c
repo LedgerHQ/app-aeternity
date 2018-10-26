@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "utils.h"
+#include "menu.h"
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
@@ -83,6 +84,49 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
 
 uint32_t readUint32BE(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
+}
+
+const uint32_t HARDENED_OFFSET = 0x80000000;
+
+const uint32_t derivePath[BIP32_PATH] = {
+  44 | HARDENED_OFFSET,
+  457 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET,
+  0 | HARDENED_OFFSET
+};
+
+void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey){
+    uint8_t privateKeyData[32];
+    uint32_t bip32Path[BIP32_PATH];
+
+    os_memmove(bip32Path, derivePath, sizeof(derivePath));
+    bip32Path[2] = accountNumber | HARDENED_OFFSET;
+    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
+    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, privateKey);
+    os_memset(privateKeyData, 0, sizeof(privateKeyData));
+}
+
+void sign(uint8_t *data, uint32_t dataLength, uint8_t *out) {
+    cx_ecfp_private_key_t privateKey;
+    uint8_t signature[64];
+
+    getPrivateKey(tmpCtx.signingContext.accountNumber, &privateKey);
+    unsigned int info = 0;
+    cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
+                         data,
+                         dataLength,
+                         NULL, 0, signature, &info);
+    os_memmove(out, signature, 64);
+}
+
+void sendResponse(uint8_t tx, bool approve){
+    G_io_apdu_buffer[tx++] = approve? 0x90 : 0x69;
+    G_io_apdu_buffer[tx++] = approve? 0x00 : 0x85;
+    // Send back the response, do not restart the event loop
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
+    // Display back the original UX
+    ui_idle();
 }
 
 bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {

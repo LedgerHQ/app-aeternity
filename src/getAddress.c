@@ -43,35 +43,14 @@ uint32_t set_result_get_address() {
     return tx;
 }
 
-unsigned int io_seproxyhal_touch_address_ok(const bagl_element_t *e) {
-    uint32_t tx = set_result_get_address();
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
-unsigned int io_seproxyhal_touch_address_cancel(const bagl_element_t *e) {
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
-
 static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch(button_mask) {
         case BUTTON_EVT_RELEASED|BUTTON_LEFT: // CANCEL
-            io_seproxyhal_touch_address_cancel(NULL);
+            sendResponse(0, false);
             break;
 
         case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
-            io_seproxyhal_touch_address_ok(NULL);
+            sendResponse(set_result_get_address(), true);
             break;
         }
     }
@@ -81,20 +60,12 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
     UNUSED(p2);
-    uint8_t privateKeyData[32];
-    uint32_t bip32Path[BIP32_PATH];
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
 
-    os_memmove(bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-    uint32_t accountNumber = readUint32BE(dataBuffer);
-    dataBuffer += 4;
-    bip32Path[2] += accountNumber;
-    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
+    getPrivateKey(readUint32BE(dataBuffer), &privateKey);
     cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
     os_memset(&privateKey, 0, sizeof(privateKey));
-    os_memset(privateKeyData, 0, sizeof(privateKeyData));
     getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
 
     if (p1 == P1_NON_CONFIRM) {

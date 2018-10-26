@@ -34,7 +34,7 @@ static unsigned int ui_approval_signMessage_prepro(const bagl_element_t *element
 static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
         case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-            io_seproxyhal_touch_signMessage_cancel(NULL);
+            sendResponse(0, false);
             break;
 
         case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
@@ -45,89 +45,52 @@ static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mas
     return 0;
 }
 
+static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
 
 unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
-    uint8_t privateKeyData[32];
-    uint8_t signature[100];
-    uint8_t signatureLength;
-    cx_ecfp_private_key_t privateKey;
-    uint32_t tx = 0;
-    os_perso_derive_node_bip32(CX_CURVE_Ed25519, tmpCtx.messageSigningContext.bip32Path,
-                               BIP32_PATH, privateKeyData, NULL);
-    cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, &privateKey);
-    os_memset(privateKeyData, 0, sizeof(privateKeyData));
-    unsigned int info = 0;
-    signatureLength =
-        cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
-                      tmpCtx.messageSigningContext.data,
-                      tmpCtx.messageSigningContext.dataLength + sizeof(SIGN_MAGIC) + 1,
-                      NULL, 0, signature, &info);
-    os_memset(&privateKey, 0, sizeof(privateKey));
-    os_memmove(G_io_apdu_buffer, signature, 64);
-    tx = 64;
-    G_io_apdu_buffer[tx++] = 0x90;
-    G_io_apdu_buffer[tx++] = 0x00;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
-    ui_idle();
-    return 0; // do not redraw the widget
-}
+    uint8_t message[0xFD + 26 + 2];
+    uint8_t messageLength = 0;
 
-unsigned int io_seproxyhal_touch_signMessage_cancel(const bagl_element_t *e) {
-    G_io_apdu_buffer[0] = 0x69;
-    G_io_apdu_buffer[1] = 0x85;
-    // Send back the response, do not restart the event loop
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
-    // Display back the original UX
-    ui_idle();
+    uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
+    message[0] = signMagicLength;
+    messageLength++;
+
+    os_memmove(message + messageLength, SIGN_MAGIC, signMagicLength);
+    messageLength += signMagicLength;
+
+    message[messageLength] = tmpCtx.signingContext.dataLength;
+    messageLength++;
+
+    os_memmove(message + messageLength, tmpCtx.signingContext.data, tmpCtx.signingContext.dataLength);
+    messageLength += tmpCtx.signingContext.dataLength;
+
+    sign(
+        message,
+        messageLength,
+        G_io_apdu_buffer
+    );
+    sendResponse(64, true);
     return 0; // do not redraw the widget
 }
 
 void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    uint8_t messageLength;
-    if (p1 == P1_FIRST) {
-        os_memmove(tmpCtx.messageSigningContext.bip32Path, derivePath, BIP32_PATH * sizeof(uint32_t));
-        uint32_t accountNumber = readUint32BE(workBuffer);
-        workBuffer += 4;
-        dataLength -= 4;
-        tmpCtx.messageSigningContext.bip32Path[2] += accountNumber;
-        tmpCtx.messageSigningContext.remainingLength = readUint32BE(workBuffer);
-        workBuffer += 4;
-        dataLength -= 4;
-        uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
-        tmpCtx.messageSigningContext.dataLength = 0;
-        tmpCtx.messageSigningContext.data[0] = signMagicLength;
-        os_memmove(tmpCtx.messageSigningContext.data + 1, SIGN_MAGIC, signMagicLength);
-        messageLength = 1 + signMagicLength;
-        tmpCtx.messageSigningContext.data[messageLength] = tmpCtx.messageSigningContext.remainingLength;
-        messageLength++;
-    }
-    else if (p1 != P1_MORE) {
+    if (p1 != P1_FIRST || p2 != 0) {
         THROW(0x6B00);
-    }
-    if (p2 != 0) {
-        THROW(0x6B00);
-    }
-    if (dataLength > tmpCtx.messageSigningContext.remainingLength
-        || tmpCtx.messageSigningContext.remainingLength >= 0xFD) {
-        THROW(0x6A80);
     }
 
-    os_memmove(tmpCtx.messageSigningContext.data + messageLength
-                + tmpCtx.messageSigningContext.dataLength,
-                workBuffer, dataLength);
-    tmpCtx.messageSigningContext.dataLength += dataLength;
-    tmpCtx.messageSigningContext.remainingLength -= dataLength;
-    if (tmpCtx.messageSigningContext.remainingLength == 0) {
-        strings.common.fullAddress[0] = '\0';
-        ux_step = 0;
-        ux_step_count = 2;
-        UX_DISPLAY(ui_approval_signMessage_nanos,
-                   ui_approval_signMessage_prepro);
-        *flags |= IO_ASYNCH_REPLY;
-    } else {
-        THROW(0x9000);
+    tmpCtx.signingContext.accountNumber = readUint32BE(workBuffer);
+    workBuffer += 8;
+    dataLength -= 8;
+    if (dataLength >= 0xFD) {
+        THROW(0x6A80);
     }
+    tmpCtx.signingContext.dataLength = dataLength;
+    tmpCtx.signingContext.data = workBuffer;
+
+    strings.common.fullAddress[0] = '\0';
+    ux_step = 0;
+    ux_step_count = 2;
+    UX_DISPLAY(ui_approval_signMessage_nanos, ui_approval_signMessage_prepro);
+    *flags |= IO_ASYNCH_REPLY;
 }
