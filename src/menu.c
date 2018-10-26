@@ -71,12 +71,6 @@ static const ux_menu_entry_t menu_main[] = {
     UX_MENU_END
 };
 
-unsigned int io_seproxyhal_touch_exit(const bagl_element_t *e) {
-    // Go back to the dashboard
-    os_sched_exit(0);
-    return 0; // do not redraw the widget
-}
-
 void ui_idle(void) {
     UX_MENU_DISPLAY(0, menu_main, NULL);
 }
