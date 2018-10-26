@@ -1,15 +1,27 @@
-# blue-app-eth
-Ethereum wallet application framework for Ledger Blue and Nano S
+# æternity ledger æpp [![Build Status](https://api.travis-ci.org/aeternity/ledger-app.svg?branch=master)](https://api.travis-ci.org/aeternity/ledger-app)
+## Overview
+æternity wallet application framework for Ledger Nano S.
+## Building and installing
+To build and install the app on your Ledger Nano S you must set up the Ledger Nano S build environments. Please follow the Getting Started instructions at [here](https://ledger.readthedocs.io/en/latest/userspace/getting_started.html).
 
-This follows the specification available in the doc/ folder
+Compile and load the app onto the device:
 
-To use the generic wallet (which disables all data transaction) refer to signTx.py (requires rlp package) or Ledger Ethereum Wallet Chrome application available on Github at https://github.com/LedgerHQ/ledger-wallet-ethereum-chrome or the Chrome Web store at https://chrome.google.com/webstore/detail/ledger-wallet-ethereum/hmlhkialjkaldndjnlcdfdphcgeadkkm 
-
-Other examples are provided reusing the Ethereum parsing framwork to implement some advanced use cases : 
-
-  * An ETH/ETC splitting contract - see src_chainsplit, splitEther.py and our Medium post at https://blog.ledger.co/splitting-your-ethers-securely-on-your-nano-s-147f20e9e341
-  * An unsupported use case (transferring The DAO (RIP) tokens), using deprecated code - see src_daosend 
-
-
-For more information about the parsing framework you can refer to https://medium.com/@Ledger/dynamic-secure-applications-with-bolos-and-ledger-blue-a-use-case-with-ethereum-and-the-dao-6be91260e89f#.204qgmogo 
-
+```
+make load
+```
+Remove the app from the device:
+```
+make delete
+```
+## Examples of Ledger wallet functionality
+Install dependencies:
+```bash
+$ cd examples
+$ pip install -r requirements.txt
+```
+Test functionality:
+```bash
+python getAddress.py --acc 0
+```
+## Documentation
+This follows the specification available in the `api.asc`
