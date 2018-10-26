@@ -58,7 +58,7 @@ static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-static void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
+static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     uint8_t buffer[36];
     uint8_t hashAddress[32];
 
@@ -67,10 +67,10 @@ static void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
     cx_hash_sha256(hashAddress, 32, hashAddress);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    address[encodeBase58(buffer, 36, address, 51)] = '\0';
+    address[encodeBase58(buffer, 36, (unsigned char*)address, 51)] = '\0';
 }
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, uint8_t *address) {
+void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
     uint8_t buffer[32];
 
     for (int i = 0; i < 32; i++) {
@@ -214,7 +214,7 @@ static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *of
     return true;
 }
 
-static void rlpParseInt(uint8_t *workBuffer, uint8_t fieldLength, uint32_t offset, char* buffer) {
+static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char* buffer) {
     uint64_t amount = 0;
     if (offset == 0) {
         workBuffer--;

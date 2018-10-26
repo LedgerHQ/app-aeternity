@@ -10,7 +10,7 @@ typedef enum rlpTxType {
     TX_FEE
 } rlpTxType;
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, uint8_t *address);
+void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address);
 
 uint32_t readUint32BE(uint8_t *buffer);
 

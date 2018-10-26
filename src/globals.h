@@ -29,7 +29,7 @@ extern union stringData{
 } strings;
 
 typedef struct addressContext_t {
-    uint8_t address[FULL_ADDRESS_LENGTH - 3];
+    char address[FULL_ADDRESS_LENGTH - 3];
 } addressContext_t;
 
 extern ux_state_t ux;

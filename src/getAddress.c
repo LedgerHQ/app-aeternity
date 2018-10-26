@@ -34,8 +34,8 @@ static unsigned int ui_address_prepro(const bagl_element_t* element) {
     return 1;
 }
 
-static uint32_t set_result_get_address() {
-    uint32_t tx = 0;
+static uint8_t set_result_get_address() {
+    uint8_t tx = 0;
     uint8_t address_size = strlen(tmpCtx.addressContext.address);
     G_io_apdu_buffer[tx++] = address_size;
     os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
