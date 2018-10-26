@@ -23,8 +23,6 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
-unsigned int io_seproxyhal_touch_exit(const bagl_element_t *e);
-
 #define CLA 0xE0
 #define INS_GET_ADDRESS 0x02
 #define INS_SIGN 0x04

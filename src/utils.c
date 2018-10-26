@@ -14,7 +14,7 @@ static const char BASE_58_ALPHABET[] = {'1', '2', '3', '4', '5', '6', '7', '8', 
                                         'h', 'i', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
                                         'w', 'x', 'y', 'z'};
 
-unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
+static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
                            unsigned char *out, unsigned char maxoutlen) {
     unsigned char tmp[164];
     unsigned char buffer[164];
@@ -58,7 +58,20 @@ unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, uint8_t *address) {
+static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+    uint8_t buffer[36];
+    uint8_t hashAddress[32];
+
+    os_memmove(buffer, publicKey, 32);
+    cx_hash_sha256(buffer, 32, hashAddress);
+    cx_hash_sha256(hashAddress, 32, hashAddress);
+    os_memmove(buffer + 32, hashAddress, 4);
+
+    snprintf(address, sizeof(address), "ak_");
+    address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
+}
+
+void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
     uint8_t buffer[32];
 
     for (int i = 0; i < 32; i++) {
@@ -68,18 +81,6 @@ void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, uint8_t *address
         buffer[31] |= 0x80;
     }
     getAeAddressStringFromBinary(buffer, address);
-}
-
-void getAeAddressStringFromBinary(uint8_t *publicKey, uint8_t *address) {
-    uint8_t buffer[36];
-    uint8_t hashAddress[32];
-
-    os_memmove(buffer, publicKey, 32);
-    cx_hash_sha256(buffer, 32, hashAddress);
-    cx_hash_sha256(hashAddress, 32, hashAddress);
-    os_memmove(buffer + 32, hashAddress, 4);
-
-    address[encodeBase58(buffer, 36, address, 51)] = '\0';
 }
 
 uint32_t readUint32BE(uint8_t *buffer) {
@@ -129,7 +130,7 @@ void sendResponse(uint8_t tx, bool approve){
     ui_idle();
 }
 
-bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
+static bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
     if (*buffer <= 0x7f) {
     } else if (*buffer <= 0xb7) {
     } else if (*buffer <= 0xbf) {
@@ -154,7 +155,7 @@ bool rlpCanDecode(uint8_t *buffer, uint32_t bufferLength, bool *valid) {
     return true;
 }
 
-bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *offset, bool *list) {
+static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *offset, bool *list) {
     if (*buffer <= 0x7f) {
         *offset = 0;
         *fieldLength = 1;
@@ -214,7 +215,7 @@ bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *offset, b
     return true;
 }
 
-void rlpParseInt(uint8_t *workBuffer, uint8_t fieldLength, uint32_t offset, char* buffer) {
+static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char* buffer) {
     uint64_t amount = 0;
     if (offset == 0) {
         workBuffer--;
@@ -285,11 +286,8 @@ void parseTx(char *address, char *amount, char *fee, uint8_t *data) {
                     THROW(0x6A80);
                 }
                 data++;
-                address[0] = 'a';
-                address[1] = 'k';
-                address[2] = '_';
                 os_memmove(publicKey, data, 32);
-                getAeAddressStringFromBinary(publicKey, address + 3);
+                getAeAddressStringFromBinary(publicKey, address);
                 data += 32;
                 break;
             case TX_AMOUNT:
