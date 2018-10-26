@@ -16,12 +16,12 @@ make delete
 ## Examples of Ledger wallet functionality
 Install dependencies:
 ```bash
-$ cd examples
-$ pip install -r requirements.txt
+cd examples
+pip install -r requirements.txt
 ```
 Test functionality:
 ```bash
 python getAddress.py --acc 0
 ```
 ## Documentation
-This follows the specification available in the `api.asc`
+This follows the specification available in the `api.asc`.
