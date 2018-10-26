@@ -2,6 +2,9 @@
 #include "cx.h"
 #include "globals.h"
 
+#ifndef _UTILS_H_
+#define _UTILS_H_
+
 typedef enum rlpTxType {
     TX_TYPE = 0,
     TX_SENDER,
@@ -21,3 +24,5 @@ void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 void parseTx(char *address, char *amount, char *fee, uint8_t *data);
 
 void sendResponse(uint8_t tx, bool approve);
+
+#endif
