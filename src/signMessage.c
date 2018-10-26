@@ -31,23 +31,9 @@ static unsigned int ui_approval_signMessage_prepro(const bagl_element_t *element
     return 1;
 }
 
-static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
-    switch (button_mask) {
-        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
-            sendResponse(0, false);
-            break;
-
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
-            io_seproxyhal_touch_signMessage_ok(NULL);
-            break;
-        }
-    }
-    return 0;
-}
-
 static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
 
-unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
+static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     uint8_t message[0xFD + 26 + 2];
     uint8_t messageLength = 0;
 
@@ -71,6 +57,20 @@ unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     );
     sendResponse(64, true);
     return 0; // do not redraw the widget
+}
+
+static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    switch (button_mask) {
+        case BUTTON_EVT_RELEASED | BUTTON_LEFT:
+            sendResponse(0, false);
+            break;
+
+        case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
+            io_seproxyhal_touch_signMessage_ok(NULL);
+            break;
+        }
+    }
+    return 0;
 }
 
 void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
