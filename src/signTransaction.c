@@ -2,23 +2,15 @@
 #include "utils.h"
 
 static const bagl_element_t ui_approval_nanos[] = {
-    // type            userid    x    y   w    h  str rad fill      fg        bg      fid iid  txt   touchparams...       ]
-    {{BAGL_RECTANGLE   , 0x00,   0,   0, 128,  32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF, 0, 0}, NULL, 0, 0, 0, NULL, NULL, NULL},
-
-    {{BAGL_ICON        , 0x00,   3,  12,   7,   7, 0, 0, 0        , 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CROSS  }, NULL, 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_ICON        , 0x00, 117,  13,   8,   6, 0, 0, 0        , 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CHECK  }, NULL, 0, 0, 0, NULL, NULL, NULL },
-
-    {{BAGL_LABELINE    , 0x01,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Confirm", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x01,   0,  26, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "transaction", 0, 0, 0, NULL, NULL, NULL },
-
-    {{BAGL_LABELINE    , 0x02,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Amount", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x02,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, strings.fullAmount, 0, 0, 0, NULL, NULL, NULL },
-
-    {{BAGL_LABELINE    , 0x03,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Address", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x03,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 50  }, strings.recipientAddress, 0, 0, 0, NULL, NULL, NULL },
-
-    {{BAGL_LABELINE    , 0x04,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Fees", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x04,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, strings.maxFee, 0, 0, 0, NULL, NULL, NULL }
+    UI_BUTTONS,
+    UI_LABELINE(0x01, "Confirm",                UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x01, "transaction",            UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x02, "Amount",                 UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x02, strings.fullAmount,       UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
+    UI_LABELINE(0x03, "Address",                UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x03, strings.recipientAddress, UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 50),
+    UI_LABELINE(0x04, "Fees",                   UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x04, strings.fee,              UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
 static unsigned int ui_approval_prepro(const bagl_element_t* element) {
@@ -70,7 +62,7 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength
 
     ux_step = 0;
     ux_step_count = 4;
-    parseTx(strings.recipientAddress, strings.fullAmount, strings.maxFee, tmpCtx.signingContext.data);
+    parseTx(strings.recipientAddress, strings.fullAmount, strings.fee, tmpCtx.signingContext.data);
     UX_DISPLAY(ui_approval_nanos, ui_approval_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }
