@@ -1,7 +1,7 @@
 #include "signTransaction.h"
 #include "utils.h"
 
-const bagl_element_t ui_approval_nanos[] = {
+static const bagl_element_t ui_approval_nanos[] = {
     // type            userid    x    y   w    h  str rad fill      fg        bg      fid iid  txt   touchparams...       ]
     {{BAGL_RECTANGLE   , 0x00,   0,   0, 128,  32, 0, 0, BAGL_FILL, 0x000000, 0xFFFFFF, 0, 0}, NULL, 0, 0, 0, NULL, NULL, NULL},
 
@@ -12,13 +12,13 @@ const bagl_element_t ui_approval_nanos[] = {
     {{BAGL_LABELINE    , 0x01,   0,  26, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "transaction", 0, 0, 0, NULL, NULL, NULL },
 
     {{BAGL_LABELINE    , 0x02,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Amount", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x02,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, (char*)strings.fullAmount, 0, 0, 0, NULL, NULL, NULL },
+    {{BAGL_LABELINE    , 0x02,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, strings.fullAmount, 0, 0, 0, NULL, NULL, NULL },
 
     {{BAGL_LABELINE    , 0x03,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Address", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x03,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 50  }, (char*)strings.recipientAddress, 0, 0, 0, NULL, NULL, NULL },
+    {{BAGL_LABELINE    , 0x03,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 50  }, strings.recipientAddress, 0, 0, 0, NULL, NULL, NULL },
 
     {{BAGL_LABELINE    , 0x04,   0,  12, 128,  32, 0, 0, 0        , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_REGULAR_11px|BAGL_FONT_ALIGNMENT_CENTER, 0}, "Fees", 0, 0, 0, NULL, NULL, NULL },
-    {{BAGL_LABELINE    , 0x04,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, (char*)strings.maxFee, 0, 0, 0, NULL, NULL, NULL }
+    {{BAGL_LABELINE    , 0x04,  23,  26,  82,  12, 0x80|10, 0, 0  , 0xFFFFFF, 0x000000, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px|BAGL_FONT_ALIGNMENT_CENTER, 26  }, strings.maxFee, 0, 0, 0, NULL, NULL, NULL }
 };
 
 static unsigned int ui_approval_prepro(const bagl_element_t* element) {
