@@ -26,8 +26,8 @@ parser.add_argument('--acc', help="Account number to retrieve", default=0)
 args = parser.parse_args()
 
 accNumber = struct.pack(">I", int(args.acc))
-result = sendApdu(Request['GetKey'], Request['Verify'], accNumber)
+result = sendApdu(Request['GetAddress'], Request['Verify'], accNumber)
 
 address = result[1 : 1 + result[0]]
 
-print "Address ak_" + str(address)
+print "Address " + str(address)
