@@ -22,7 +22,7 @@ from ledgerblue.commException import CommException
 from rlp.sedes import big_endian_int, binary, Binary
 from rlp import Serializable
 
-Request = { 'NoneVerify' : 0,  'Verify' : 1, 'GetKey' : 2, 'SignTx' : 4, 'GetConfig' : 6, 'SignMessage' : 8 }
+Request = { 'NoneVerify' : 0,  'Verify' : 1, 'GetAddress' : 2, 'SignTx' : 4, 'GetConfig' : 6, 'SignMessage' : 8 }
 
 address = Binary.fixed_length(33, allow_empty=True)
 
