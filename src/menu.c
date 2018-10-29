@@ -31,7 +31,7 @@ static void menu_settings_data_init(unsigned int ignored) {
     UX_MENU_DISPLAY(N_storage.dataAllowed?1:0, menu_settings_data, NULL);
 }
 
-static static void menu_settings_details_init(unsigned int ignored) {
+static void menu_settings_details_init(unsigned int ignored) {
     UNUSED(ignored);
     UX_MENU_DISPLAY(N_storage.contractDetails?1:0, menu_settings_details, NULL);
 }
