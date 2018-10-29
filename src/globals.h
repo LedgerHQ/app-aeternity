@@ -16,6 +16,7 @@ extern struct strData_t {
     char recipientAddress[FULL_ADDRESS_LENGTH];
     char fullAmount[50];
     char fee[50];
+    char message[150];
 } strings;
 
 typedef struct addressContext_t {
