@@ -29,10 +29,14 @@ install:
 script:
   - make
 
+before_deploy:
+  - export DATA_SIZE_OF_PRECOMPILED_HEX=$(cat debug/app.map | grep _nvram_data_size | tr -s ' ' | cut -f2 -d' ')
+
 deploy:
   - provider: releases
     api_key: $GITHUB_TOKEN
     file: bin/app.hex
+    body: "DATA_SIZE_OF_PRECOMPILED_HEX: $DATA_SIZE_OF_PRECOMPILED_HEX"
     skip_cleanup: true
     on:
       tags: true
