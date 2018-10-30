@@ -16,10 +16,6 @@ extern struct strData_t {
     char message[150];
 } strings;
 
-typedef struct addressContext_t {
-    char address[FULL_ADDRESS_LENGTH];
-} addressContext_t;
-
 extern ux_state_t ux;
 // display stepped screens
 extern unsigned int ux_step;
@@ -32,7 +28,6 @@ typedef struct signingContext_t {
 } signingContext_t;
 
 extern union tempContext{
-    addressContext_t addressContext;
     signingContext_t signingContext;
 } tmpCtx;
 

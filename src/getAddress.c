@@ -1,12 +1,14 @@
 #include "getAddress.h"
 #include "utils.h"
 
+static char address[FULL_ADDRESS_LENGTH];
+
 static const bagl_element_t ui_address_nanos[] = {
     UI_BUTTONS,
-    UI_LABELINE(0x01, "Confirm",                     UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x01, "address",                     UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x02, "Address",                     UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x02, tmpCtx.addressContext.address, UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
+    UI_LABELINE(0x01, "Confirm", UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x01, "address", UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x02, "Address", UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x02, address,   UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
 static unsigned int ui_address_prepro(const bagl_element_t* element) {
@@ -29,9 +31,9 @@ static unsigned int ui_address_prepro(const bagl_element_t* element) {
 
 static uint8_t set_result_get_address() {
     uint8_t tx = 0;
-    uint8_t address_size = strlen(tmpCtx.addressContext.address);
+    uint8_t address_size = strlen(address);
     G_io_apdu_buffer[tx++] = address_size;
-    os_memmove(G_io_apdu_buffer + tx, tmpCtx.addressContext.address, address_size);
+    os_memmove(G_io_apdu_buffer + tx, address, address_size);
     tx += address_size;
     return tx;
 }
@@ -59,7 +61,7 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     getPrivateKey(readUint32BE(dataBuffer), &privateKey);
     cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
     os_memset(&privateKey, 0, sizeof(privateKey));
-    getAeAddressStringFromKey(&publicKey, tmpCtx.addressContext.address);
+    getAeAddressStringFromKey(&publicKey, address);
 
     if (p1 == P1_NON_CONFIRM) {
         *tx = set_result_get_address();
