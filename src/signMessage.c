@@ -8,10 +8,10 @@ static uint32_t dataLength;
 
 static const bagl_element_t ui_approval_signMessage_nanos[] = {
     UI_BUTTONS,
-    UI_LABELINE(0x01, "Sign the",       UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x01, "message",        UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x02, "Message hash",   UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x02, message,          UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
+    UI_LABELINE(0x01, "Sign the", UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x01, "message",  UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x02, "Message",  UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x02, message,    UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
 static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
