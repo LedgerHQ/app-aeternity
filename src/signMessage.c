@@ -1,12 +1,17 @@
 #include "signMessage.h"
 #include "utils.h"
 
+static char message[150];
+static uint32_t accountNumber;
+static uint8_t *data;
+static uint32_t dataLength;
+
 static const bagl_element_t ui_approval_signMessage_nanos[] = {
     UI_BUTTONS,
-    UI_LABELINE(0x01, "Sign the",               UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x01, "message",                UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x02, "Message hash",           UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x02, strings.message,          UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
+    UI_LABELINE(0x01, "Sign the",       UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x01, "message",        UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
+    UI_LABELINE(0x02, "Message hash",   UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
+    UI_LABELINE(0x02, message,          UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
 static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
@@ -22,14 +27,14 @@ static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) 
     os_memmove(message + messageLength, SIGN_MAGIC, signMagicLength);
     messageLength += signMagicLength;
 
-    message[messageLength] = tmpCtx.signingContext.dataLength;
+    message[messageLength] = dataLength;
     messageLength++;
 
-    os_memmove(message + messageLength, tmpCtx.signingContext.data, tmpCtx.signingContext.dataLength);
-    messageLength += tmpCtx.signingContext.dataLength;
+    os_memmove(message + messageLength, data, dataLength);
+    messageLength += dataLength;
 
     sign(
-        tmpCtx.signingContext.accountNumber,
+        accountNumber,
         message,
         messageLength,
         G_io_apdu_buffer
@@ -52,22 +57,22 @@ static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mas
     return 0;
 }
 
-void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBufferLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
     if (p1 != P1_FIRST || p2 != 0) {
         THROW(0x6B00);
     }
 
-    tmpCtx.signingContext.accountNumber = readUint32BE(workBuffer);
+    accountNumber = readUint32BE(workBuffer);
     workBuffer += 8;
-    dataLength -= 8;
-    if (dataLength >= 0xFD) {
+    workBufferLength -= 8;
+    if (workBufferLength >= 0xFD) {
         THROW(0x6A80);
     }
-    tmpCtx.signingContext.dataLength = dataLength;
-    tmpCtx.signingContext.data = workBuffer;
+    dataLength = workBufferLength;
+    data = workBuffer;
 
-    snprintf(strings.message, sizeof(strings.message), "%.*s", dataLength, workBuffer);
+    snprintf(message, sizeof(message), "%.*s", dataLength, workBuffer);
     ux_step = 0;
     ux_step_count = 2;
     UX_DISPLAY(ui_approval_signMessage_nanos, ui_approval_sign_prepro);

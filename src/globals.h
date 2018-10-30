@@ -12,24 +12,10 @@
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
 
-extern struct strData_t {
-    char message[150];
-} strings;
-
 extern ux_state_t ux;
 // display stepped screens
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
-
-typedef struct signingContext_t {
-    uint32_t accountNumber;
-    uint8_t *data;
-    uint32_t dataLength;
-} signingContext_t;
-
-extern union tempContext{
-    signingContext_t signingContext;
-} tmpCtx;
 
 typedef struct internalStorage_t {
     unsigned char dataAllowed;
