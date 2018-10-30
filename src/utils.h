@@ -19,7 +19,7 @@ void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address);
 
 uint32_t readUint32BE(uint8_t *buffer);
 
-void sign(uint8_t *data, uint32_t dataLength, uint8_t *signature);
+void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *signature);
 
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 

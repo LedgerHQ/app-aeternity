@@ -108,11 +108,11 @@ void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey){
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
 }
 
-void sign(uint8_t *data, uint32_t dataLength, uint8_t *out) {
+void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *out) {
     cx_ecfp_private_key_t privateKey;
     uint8_t signature[64];
 
-    getPrivateKey(tmpCtx.signingContext.accountNumber, &privateKey);
+    getPrivateKey(accountNumber, &privateKey);
     unsigned int info = 0;
     cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
                          data,

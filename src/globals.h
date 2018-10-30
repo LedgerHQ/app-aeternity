@@ -12,32 +12,10 @@
 #define FULL_ADDRESS_LENGTH 54
 #define BIP32_PATH 5
 
-extern struct strData_t {
-    char recipientAddress[FULL_ADDRESS_LENGTH];
-    char fullAmount[50];
-    char fee[50];
-    char message[150];
-} strings;
-
-typedef struct addressContext_t {
-    char address[FULL_ADDRESS_LENGTH];
-} addressContext_t;
-
 extern ux_state_t ux;
 // display stepped screens
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
-
-typedef struct signingContext_t {
-    uint32_t accountNumber;
-    uint8_t *data;
-    uint32_t dataLength;
-} signingContext_t;
-
-extern union tempContext{
-    addressContext_t addressContext;
-    signingContext_t signingContext;
-} tmpCtx;
 
 typedef struct internalStorage_t {
     unsigned char dataAllowed;
