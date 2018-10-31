@@ -6,20 +6,20 @@ To build and install the app on your Ledger Nano S you must set up the Ledger Na
 
 Compile and load the app onto the device:
 
-```
+```bash
 make load
 ```
 Remove the app from the device:
-```
+```bash
 make delete
 ```
 ## Load pre-compiled HEX file
 Install dependencies:
-```
+```bash
 pip install ledgerblue
 ```
 Load [latest release](https://github.com/aeternity/ledger-app/releases/latest) into device using `DATA_SIZE_OF_PRECOMPILED_HEX` and `VERSION` without `v`
-```
+```bash
 python -m ledgerblue.loadApp                        \
     --curve ed25519                                 \
     --tlv                                           \
