@@ -1,6 +1,8 @@
 # æternity ledger æpp [![Build Status](https://api.travis-ci.org/aeternity/ledger-app.svg?branch=master)](https://api.travis-ci.org/aeternity/ledger-app)
+
 ## Overview
 æternity wallet application framework for Ledger Nano S.
+
 ## Building and installing
 To build and install the app on your Ledger Nano S you must set up the Ledger Nano S build environments. Please follow the Getting Started instructions at [here](https://ledger.readthedocs.io/en/latest/userspace/getting_started.html).
 
@@ -13,6 +15,7 @@ Remove the app from the device:
 ```bash
 make delete
 ```
+
 ## Load pre-compiled HEX file
 Install dependencies:
 ```bash
@@ -35,6 +38,7 @@ python -m ledgerblue.loadApp                        \
 Replace `VERSION` with the version of realese, for example `0.1.1`.
 
 Replace `DATA_SIZE_OF_PRECOMPILED_HEX` with the data size of the pre-compiled HEX file that is available in release.
+
 ## Examples of Ledger wallet functionality
 Install dependencies:
 ```bash
@@ -45,5 +49,6 @@ Test functionality:
 ```bash
 python getAddress.py --acc 0
 ```
+
 ## Documentation
 This follows the specification available in the `api.asc`.
