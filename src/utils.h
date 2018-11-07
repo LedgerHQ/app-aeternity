@@ -13,7 +13,7 @@ typedef enum rlpTxType {
     TX_FEE
 } rlpTxType;
 
-unsigned int ui_approval_sign_prepro(const bagl_element_t *element);
+unsigned int ui_prepro(const bagl_element_t *element);
 
 void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address);
 

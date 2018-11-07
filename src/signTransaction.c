@@ -49,6 +49,6 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
     ux_step = 0;
     ux_step_count = 4;
     parseTx(recipientAddress, fullAmount, fee, data);
-    UX_DISPLAY(ui_approval_nanos, ui_approval_sign_prepro);
+    UX_DISPLAY(ui_approval_nanos, ui_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }

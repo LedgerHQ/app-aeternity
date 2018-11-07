@@ -130,7 +130,7 @@ void sendResponse(uint8_t tx, bool approve) {
     ui_idle();
 }
 
-unsigned int ui_approval_sign_prepro(const bagl_element_t *element) {
+unsigned int ui_prepro(const bagl_element_t *element) {
     unsigned int display = 1;
     if (element->component.userid > 0) {
         display = (ux_step == element->component.userid - 1);
