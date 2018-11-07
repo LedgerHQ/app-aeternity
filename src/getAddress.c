@@ -11,24 +11,6 @@ static const bagl_element_t ui_address_nanos[] = {
     UI_LABELINE(0x02, address,   UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
-static unsigned int ui_address_prepro(const bagl_element_t *element) {
-    if (element->component.userid > 0) {
-        unsigned int display = (ux_step == element->component.userid - 1);
-        if (display) {
-            switch (element->component.userid) {
-                case 1:
-                    UX_CALLBACK_SET_INTERVAL(2000);
-                    break;
-                case 2:
-                    UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
-                    break;
-            }
-        }
-        return display;
-    }
-    return 1;
-}
-
 static uint8_t set_result_get_address() {
     uint8_t tx = 0;
     uint8_t address_size = strlen(address);
@@ -68,7 +50,7 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     } else {
         ux_step = 0;
         ux_step_count = 2;
-        UX_DISPLAY(ui_address_nanos, ui_address_prepro);
+        UX_DISPLAY(ui_address_nanos, ui_prepro);
 
         *flags |= IO_ASYNCH_REPLY;
     }

@@ -74,6 +74,6 @@ void handleSignPersonalMessage(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint
     snprintf(message, sizeof(message), "%.*s", dataLength, workBuffer);
     ux_step = 0;
     ux_step_count = 2;
-    UX_DISPLAY(ui_approval_signMessage_nanos, ui_approval_sign_prepro);
+    UX_DISPLAY(ui_approval_signMessage_nanos, ui_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }
