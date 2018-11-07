@@ -172,7 +172,7 @@ void sample_main(void) {
 
 // override point, but nothing more to do
 void io_seproxyhal_display(const bagl_element_t *element) {
-    io_seproxyhal_display_default((bagl_element_t *)element);
+    io_seproxyhal_display_default((bagl_element_t*)element);
 }
 
 unsigned char io_event(unsigned char channel) {
@@ -191,7 +191,7 @@ unsigned char io_event(unsigned char channel) {
 
         case SEPROXYHAL_TAG_STATUS_EVENT:
             if (G_io_apdu_media == IO_APDU_MEDIA_USB_HID && !(U4BE(G_io_seproxyhal_spi_buffer, 3) & SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
-            THROW(EXCEPTION_IO_RESET);
+                THROW(EXCEPTION_IO_RESET);
             }
             // no break is intentional
         default:
@@ -208,7 +208,7 @@ unsigned char io_event(unsigned char channel) {
             if (UX_ALLOWED) {
                 if (ux_step_count) {
                 // prepare next screen
-                ux_step = (ux_step+1)%ux_step_count;
+                ux_step = (ux_step + 1) % ux_step_count;
                 // redisplay screen
                 UX_REDISPLAY();
                 }

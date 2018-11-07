@@ -28,6 +28,6 @@ args = parser.parse_args()
 accNumber = struct.pack(">I", int(args.acc))
 result = sendApdu(Request['GetAddress'], Request['Verify'], accNumber)
 
-address = result[1 : 1 + result[0]]
+address = result[1: 1 + result[0]]
 
 print "Address " + str(address)

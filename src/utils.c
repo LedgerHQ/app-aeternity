@@ -97,7 +97,7 @@ static const uint32_t derivePath[BIP32_PATH] = {
   0 | HARDENED_OFFSET
 };
 
-void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey){
+void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey) {
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
 
@@ -121,7 +121,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *o
     os_memmove(out, signature, 64);
 }
 
-void sendResponse(uint8_t tx, bool approve){
+void sendResponse(uint8_t tx, bool approve) {
     G_io_apdu_buffer[tx++] = approve? 0x90 : 0x69;
     G_io_apdu_buffer[tx++] = approve? 0x00 : 0x85;
     // Send back the response, do not restart the event loop
@@ -139,7 +139,7 @@ unsigned int ui_approval_sign_prepro(const bagl_element_t *element) {
                 UX_CALLBACK_SET_INTERVAL(2000);
             }
             else {
-                UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000+bagl_label_roundtrip_duration_ms(element, 7)));
+                UX_CALLBACK_SET_INTERVAL(MAX(3000, 1000 + bagl_label_roundtrip_duration_ms(element, 7)));
             }
         }
     }
@@ -231,7 +231,7 @@ static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *of
     return true;
 }
 
-static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char* buffer) {
+static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
     uint64_t amount = 0;
     if (offset == 0) {
         workBuffer--;

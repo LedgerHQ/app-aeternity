@@ -26,11 +26,10 @@ static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned 
             sendResponse(0, false);
             break;
 
-        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: {
+        case BUTTON_EVT_RELEASED|BUTTON_RIGHT:
             sign(accountNumber, data, dataLength, G_io_apdu_buffer);
             sendResponse(64, true);
             break;
-        }
     }
     return 0;
 }

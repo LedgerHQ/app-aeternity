@@ -24,12 +24,19 @@ from rlp import encode
 from base58 import b58decode_check
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sender', help="Sender address", default="ak_2swhLkgBPeeADxVTAVCJnZLY5NZtCFiM93JxsEaMuC59euuFRQ")
-parser.add_argument('--recipient', help="Recipient address", default="ak_DzELMKnSfJcfnCUZ2SbXUSxRmFYtGrWmMuKiCx68YKLH26kwc")
+parser.add_argument(
+    '--sender', help="Sender address",
+    default="ak_2swhLkgBPeeADxVTAVCJnZLY5NZtCFiM93JxsEaMuC59euuFRQ"
+)
+parser.add_argument(
+    '--recipient', help="Recipient address",
+    default="ak_DzELMKnSfJcfnCUZ2SbXUSxRmFYtGrWmMuKiCx68YKLH26kwc"
+)
 parser.add_argument('--amount', help="Amount to send", default=1000000000)
 parser.add_argument('--fee', help="fee", default=1)
 parser.add_argument('--ttl', help="ttl", default=9007199254740991)
-parser.add_argument('--nonce', help="Nonce associated to the account", default=0)
+parser.add_argument('--nonce', help="Nonce associated to the account",
+                    default=0)
 parser.add_argument('--payload', help="Payload", default="")
 parser.add_argument('--acc', help="Account number to sign with", default=0)
 parser.add_argument('--tx', help="Hex encoded transaction")
@@ -37,7 +44,7 @@ args = parser.parse_args()
 
 addressPrefix = '01'.decode('hex')
 
-if args.tx != None:
+if args.tx is not None:
     encodedTx = args.tx.decode('hex')
 else:
     tx = Transaction(
@@ -52,7 +59,8 @@ else:
     encodedTx = encode(tx, Transaction)
 
 accNumber = struct.pack(">I", int(args.acc))
-result = sendApdu(Request['SignTx'], Request['NoneVerify'], accNumber, encodedTx)
+result = sendApdu(Request['SignTx'], Request['NoneVerify'],
+                  accNumber, encodedTx)
 
 signature = result[0: 1 + 32 + 32]
 print "Signature " + ''.join(format(x, '02x') for x in signature)
