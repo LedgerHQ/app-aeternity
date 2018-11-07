@@ -22,9 +22,11 @@ from ledgerblue.commException import CommException
 from rlp.sedes import big_endian_int, binary, Binary
 from rlp import Serializable
 
-Request = { 'NoneVerify' : 0,  'Verify' : 1, 'GetAddress' : 2, 'SignTx' : 4, 'GetConfig' : 6, 'SignMessage' : 8 }
+Request = {'NoneVerify': 0, 'Verify': 1, 'GetAddress': 2,
+           'SignTx': 4, 'GetConfig': 6, 'SignMessage': 8}
 
 address = Binary.fixed_length(33, allow_empty=True)
+
 
 class Transaction(Serializable):
     fields = [
@@ -39,8 +41,11 @@ class Transaction(Serializable):
         ('payload', binary)
     ]
 
-    def __init__(self, sender, recipient, amount, fee, ttl, nonce, payload, type=12, id=1):
-        super(Transaction, self).__init__(type, id, sender, recipient, amount, fee, ttl, nonce, payload)
+    def __init__(self, sender, recipient, amount, fee,
+                 ttl, nonce, payload, type=12, id=1):
+        super(Transaction, self).__init__(type, id, sender, recipient,
+                                          amount, fee, ttl, nonce, payload)
+
 
 def sendApdu(*arg):
     argLength = len(arg)

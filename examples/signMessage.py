@@ -23,12 +23,14 @@ import struct
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--acc', help="Account number to sign with", default=0)
-parser.add_argument('--message', help="Message to be sign", default="test message")
+parser.add_argument('--message', help="Message to be sign",
+                    default="test message")
 args = parser.parse_args()
 
 accNumber = struct.pack(">I", int(args.acc))
 messageLength = struct.pack(">I", len(args.message))
-result = sendApdu(Request['SignMessage'], Request['NoneVerify'], accNumber, messageLength, args.message)
+result = sendApdu(Request['SignMessage'], Request['NoneVerify'],
+                  accNumber, messageLength, args.message)
 
 signature = result[0: 1 + 32 + 32]
 print "Signature " + ''.join(format(x, '02x') for x in signature)
