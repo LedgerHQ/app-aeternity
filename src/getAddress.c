@@ -44,10 +44,9 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
             sendResponse(0, false);
             break;
 
-        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: { // OK
+        case BUTTON_EVT_RELEASED|BUTTON_RIGHT: // OK
             sendResponse(set_result_get_address(), true);
             break;
-        }
     }
     return 0;
 }

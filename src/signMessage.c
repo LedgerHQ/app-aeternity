@@ -49,10 +49,9 @@ static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mas
             sendResponse(0, false);
             break;
 
-        case BUTTON_EVT_RELEASED | BUTTON_RIGHT: {
+        case BUTTON_EVT_RELEASED | BUTTON_RIGHT:
             io_seproxyhal_touch_signMessage_ok(NULL);
             break;
-        }
     }
     return 0;
 }
