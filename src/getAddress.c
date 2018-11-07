@@ -11,7 +11,7 @@ static const bagl_element_t ui_address_nanos[] = {
     UI_LABELINE(0x02, address,   UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
-static unsigned int ui_address_prepro(const bagl_element_t* element) {
+static unsigned int ui_address_prepro(const bagl_element_t *element) {
     if (element->component.userid > 0) {
         unsigned int display = (ux_step == element->component.userid - 1);
         if (display) {

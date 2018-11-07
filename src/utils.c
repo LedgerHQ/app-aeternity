@@ -231,7 +231,7 @@ static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *of
     return true;
 }
 
-static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char* buffer) {
+static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
     uint64_t amount = 0;
     if (offset == 0) {
         workBuffer--;
