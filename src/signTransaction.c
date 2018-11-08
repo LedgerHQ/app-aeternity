@@ -43,12 +43,14 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
     accountNumber = readUint32BE(workBuffer);
     workBuffer += 4;
     workBufferLength -= 4;
+    uint8_t networkIdLength = *(workBuffer++);
+    workBufferLength--;
     dataLength = workBufferLength;
     data = workBuffer;
 
     ux_step = 0;
     ux_step_count = 4;
-    parseTx(recipientAddress, fullAmount, fee, data);
+    parseTx(recipientAddress, fullAmount, fee, data + networkIdLength);
     UX_DISPLAY(ui_approval_nanos, ui_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }
