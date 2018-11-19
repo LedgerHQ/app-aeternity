@@ -118,6 +118,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *o
                          data,
                          dataLength,
                          NULL, 0, signature, &info);
+    os_memset(&privateKey, 0, sizeof(privateKey));
     os_memmove(out, signature, 64);
 }
 
