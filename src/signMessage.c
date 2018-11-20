@@ -14,13 +14,13 @@ static const bagl_element_t ui_approval_signMessage_nanos[] = {
     UI_LABELINE(0x02, message,    UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
 };
 
-static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
+static const char SIGN_MAGIC[] = "æternity Signed Message:\n";
 
 static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     uint8_t message[0xFC + sizeof(SIGN_MAGIC) - 1 + 2];
     uint8_t messageLength = 0;
 
-    uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
+    const uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
     message[0] = signMagicLength;
     messageLength++;
 
