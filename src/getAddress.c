@@ -13,7 +13,7 @@ static const bagl_element_t ui_address_nanos[] = {
 
 static uint8_t set_result_get_address() {
     uint8_t tx = 0;
-    uint8_t address_size = strlen(address);
+    const uint8_t address_size = strlen(address);
     G_io_apdu_buffer[tx++] = address_size;
     os_memmove(G_io_apdu_buffer + tx, address, address_size);
     tx += address_size;
