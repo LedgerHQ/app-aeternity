@@ -1,7 +1,7 @@
 #include "signMessage.h"
 #include "utils.h"
 
-static char message[150];
+static char message[0xFC];
 static uint32_t accountNumber;
 static uint8_t *data;
 static uint32_t dataLength;
@@ -17,7 +17,7 @@ static const bagl_element_t ui_approval_signMessage_nanos[] = {
 static const char const SIGN_MAGIC[] = "æternity Signed Message:\n";
 
 static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
-    uint8_t message[0xFD + 26 + 2];
+    uint8_t message[0xFC + sizeof(SIGN_MAGIC) - 1 + 2];
     uint8_t messageLength = 0;
 
     uint8_t signMagicLength = sizeof(SIGN_MAGIC) - 1;
