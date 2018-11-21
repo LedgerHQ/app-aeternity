@@ -81,11 +81,23 @@ include $(BOLOS_SDK)/Makefile.glyphs
 APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 
+APP_LOAD_PARAMS_EVALUATED = $(shell printf '"%s" ' $(APP_LOAD_PARAMS))
+export APP_LOAD_PARAMS_EVALUATED
+
 load: all
-	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
+	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS_EVALUATED)
+
+load-offline: all
+	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS_EVALUATED) --offline
 
 delete:
 	python -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
+
+release: all
+	cat load-template.sh | envsubst > load.sh
+	chmod +x load.sh
+	tar -zcf aeternity-ledger-app-$(APPVERSION).tar.gz load.sh bin/app.hex
+	rm load.sh
 
 # import generic rules from the sdk
 include $(BOLOS_SDK)/Makefile.rules
