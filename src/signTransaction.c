@@ -36,6 +36,8 @@ static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned 
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBufferLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
+    uint8_t senderPublicKey[32];
+
     if (p1 != P1_FIRST || p2 != 0) {
         THROW(0x6B00);
     }
@@ -50,7 +52,7 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
 
     ux_step = 0;
     ux_step_count = 4;
-    parseTx(recipientAddress, fullAmount, fee, data + networkIdLength);
+    parseTx(senderPublicKey, recipientAddress, fullAmount, fee, data + networkIdLength, dataLength - networkIdLength);
     UX_DISPLAY(ui_approval_nanos, ui_prepro);
     *flags |= IO_ASYNCH_REPLY;
 }

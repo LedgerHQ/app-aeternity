@@ -6,7 +6,8 @@
 #define _UTILS_H_
 
 typedef enum rlpTxType {
-    TX_TYPE = 0,
+    TX_LENGTH = 0,
+    TX_TYPE,
     TX_SENDER,
     TX_RECIPIENT,
     TX_AMOUNT,
@@ -23,7 +24,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *s
 
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 
-void parseTx(char *address, char *amount, char *fee, uint8_t *data);
+void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength);
 
 void sendResponse(uint8_t tx, bool approve);
 
