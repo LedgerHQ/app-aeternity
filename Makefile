@@ -33,11 +33,9 @@ CHAIN=aternity
 endif
 
 ifeq ($(CHAIN),aternity)
-#TODO : Fix in 1.4.3
-#APP_LOAD_PARAMS += --path "44'/60'"
-APP_LOAD_PARAMS += --path "44'"
+APP_LOAD_PARAMS += --path "44'/457'"
 APPNAME = "Aeternity"
-APP_LOAD_FLAGS=--appFlags 0x840
+APP_LOAD_FLAGS=--appFlags 0x40
 else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
 $(error Unsupported CHAIN - use aternity)
@@ -71,9 +69,6 @@ DEFINES   += HAVE_U2F HAVE_IO_U2F
 DEFINES   += U2F_PROXY_MAGIC=\"w0w\"
 DEFINES   += USB_SEGMENT_SIZE=64
 DEFINES   += BLE_SEGMENT_SIZE=32 #max MTU, min 20
-
-WEBUSB_URL     = www.ledgerwallet.com
-DEFINES       += HAVE_WEBUSB WEBUSB_URL_SIZE_B=$(shell echo -n $(WEBUSB_URL) | wc -c) WEBUSB_URL=$(shell echo -n $(WEBUSB_URL) | sed -e "s/./\\\'\0\\\',/g")
 
 DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
