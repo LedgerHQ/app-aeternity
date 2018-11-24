@@ -20,29 +20,14 @@ $(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS= --curve ed25519 --path "44'/457'" --appFlags 0x40 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=0
 APPVERSION_N=1
 APPVERSION_P=1
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-APP_LOAD_FLAGS= --appFlags 0x40 --dep Aternity:$(APPVERSION)
-
-ifeq ($(CHAIN),)
-CHAIN=aternity
-endif
-
-ifeq ($(CHAIN),aternity)
-APP_LOAD_PARAMS += --path "44'/457'"
 APPNAME = "Aeternity"
-APP_LOAD_FLAGS=--appFlags 0x40
-else
-ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported CHAIN - use aternity)
-endif
-endif
 
-APP_LOAD_PARAMS += $(APP_LOAD_FLAGS)
 DEFINES += $(DEFINES_LIB)
 
 #prepare hsm generation
@@ -121,6 +106,3 @@ include $(BOLOS_SDK)/Makefile.rules
 
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
-
-listvariants:
-	@echo VARIANTS CHAIN aeternity
