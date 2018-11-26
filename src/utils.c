@@ -58,7 +58,7 @@ static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     uint8_t buffer[36];
     uint8_t hashAddress[32];
 
@@ -71,23 +71,18 @@ static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
 }
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
-    uint8_t buffer[32];
+void getPublicKey(uint32_t accountNumber, uint8_t *publicKeyArray) {
+    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_public_key_t publicKey;
+
+    getPrivateKey(accountNumber, &privateKey);
+    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
+    os_memset(&privateKey, 0, sizeof(privateKey));
 
     for (int i = 0; i < 32; i++) {
-        buffer[i] = publicKey->W[64 - i];
+        publicKeyArray[i] = publicKey.W[64 - i];
     }
-    if ((publicKey->W[32] & 1) != 0) {
-        buffer[31] |= 0x80;
-    }
-    getAeAddressStringFromBinary(buffer, address);
-}
-
-void getPublicKeyArray(cx_ecfp_public_key_t *publicKey, uint8_t *publicKeyArray) {
-    for (int i = 0; i < 32; i++) {
-        publicKeyArray[i] = publicKey->W[64 - i];
-    }
-    if ((publicKey->W[32] & 1) != 0) {
+    if ((publicKey.W[32] & 1) != 0) {
         publicKeyArray[31] |= 0x80;
     }
 }

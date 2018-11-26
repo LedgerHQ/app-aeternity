@@ -36,10 +36,8 @@ static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned 
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBufferLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    cx_ecfp_private_key_t privateKey;
-    cx_ecfp_public_key_t publicKey;
     uint8_t senderPublicKey[32];
-    uint8_t publicKeyArray[32];
+    uint8_t publicKey[32];
 
     if (p1 != P1_FIRST || p2 != 0) {
         THROW(0x6B00);
@@ -48,12 +46,6 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
     accountNumber = readUint32BE(workBuffer);
     workBuffer += 4;
     workBufferLength -= 4;
-
-    getPrivateKey(accountNumber, &privateKey);
-    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
-    os_memset(&privateKey, 0, sizeof(privateKey));
-    getPublicKeyArray(&publicKey, publicKeyArray);
-
     const uint8_t networkIdLength = *(workBuffer++);
     workBufferLength--;
     dataLength = workBufferLength;
@@ -62,8 +54,9 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
     ux_step = 0;
     ux_step_count = 4;
     parseTx(senderPublicKey, recipientAddress, fullAmount, fee, data + networkIdLength, dataLength - networkIdLength);
+    getPublicKey(accountNumber, publicKey);
 
-    if (os_memcmp(publicKeyArray, senderPublicKey, sizeof(publicKeyArray)) != 0) {
+    if (os_memcmp(publicKey, senderPublicKey, sizeof(publicKey)) != 0) {
         PRINTF("Sender is not correct\n");
         THROW(0x6A80);
     }

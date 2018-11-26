@@ -36,13 +36,10 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
     UNUSED(p2);
-    cx_ecfp_private_key_t privateKey;
-    cx_ecfp_public_key_t publicKey;
+    uint8_t publicKey[32];
 
-    getPrivateKey(readUint32BE(dataBuffer), &privateKey);
-    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
-    os_memset(&privateKey, 0, sizeof(privateKey));
-    getAeAddressStringFromKey(&publicKey, address);
+    getPublicKey(readUint32BE(dataBuffer), publicKey);
+    getAeAddressStringFromBinary(publicKey, address);
 
     if (p1 == P1_NON_CONFIRM) {
         *tx = set_result_get_address();
