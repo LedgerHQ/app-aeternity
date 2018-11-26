@@ -6,16 +6,19 @@
 #define _UTILS_H_
 
 typedef enum rlpTxType {
-    TX_TYPE = 0,
+    TX_LENGTH = 0,
+    TX_TYPE,
     TX_SENDER,
-    TX_RECIPENT,
+    TX_RECIPIENT,
     TX_AMOUNT,
     TX_FEE
 } rlpTxType;
 
 unsigned int ui_prepro(const bagl_element_t *element);
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address);
+void getAeAddressStringFromBinary(uint8_t *publicKey, char *address);
+
+void getPublicKey(uint32_t accountNumber, uint8_t *publicKeyArray);
 
 uint32_t readUint32BE(uint8_t *buffer);
 
@@ -23,7 +26,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *s
 
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 
-void parseTx(char *address, char *amount, char *fee, uint8_t *data);
+void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength);
 
 void sendResponse(uint8_t tx, bool approve);
 

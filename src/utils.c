@@ -58,7 +58,7 @@ static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     uint8_t buffer[36];
     uint8_t hashAddress[32];
 
@@ -71,16 +71,20 @@ static void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
 }
 
-void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
-    uint8_t buffer[32];
+void getPublicKey(uint32_t accountNumber, uint8_t *publicKeyArray) {
+    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_public_key_t publicKey;
+
+    getPrivateKey(accountNumber, &privateKey);
+    cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
+    os_memset(&privateKey, 0, sizeof(privateKey));
 
     for (int i = 0; i < 32; i++) {
-        buffer[i] = publicKey->W[64 - i];
+        publicKeyArray[i] = publicKey.W[64 - i];
     }
-    if ((publicKey->W[32] & 1) != 0) {
-        buffer[31] |= 0x80;
+    if ((publicKey.W[32] & 1) != 0) {
+        publicKeyArray[31] |= 0x80;
     }
-    getAeAddressStringFromBinary(buffer, address);
 }
 
 uint32_t readUint32BE(uint8_t *buffer) {
@@ -232,16 +236,16 @@ static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *of
     return true;
 }
 
-static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
+static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
     uint64_t amount = 0;
     if (offset == 0) {
-        workBuffer--;
-        amount = *workBuffer++;
+        (*workBuffer)--;
+        amount = *(*workBuffer)++;
     }
     else{
-        workBuffer += offset - 1;
+        *workBuffer += offset - 1;
         for (uint8_t i = 0; i < fieldLength; i++) {
-            amount += *workBuffer++ << (8 * (fieldLength - 1 - i));
+            amount += *(*workBuffer)++ << (8 * (fieldLength - 1 - i));
         }
     }
     if (amount == 0) {
@@ -261,24 +265,38 @@ static void rlpParseInt(uint8_t *workBuffer, uint32_t fieldLength, uint32_t offs
     buffer[digits] = '\0';
 }
 
-void parseTx(char *address, char *amount, char *fee, uint8_t *data) {
-    uint8_t publicKey[32];
+static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
+    if (**data != ACCOUNT_ADDRESS_PREFIX || fieldLength != 33) {
+        PRINTF("Wrong type of publicKey or publicKey length: %d %d\n", **data, fieldLength);
+        THROW(0x6A80);
+    }
+    (*data)++;
+    os_memmove(publicKey, *data, 32);
+    *data += 32;
+}
+
+void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength) {
+    uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
     uint32_t fieldLength;
     uint32_t offset = 0;
-    rlpTxType type = -1;
+    rlpTxType type = TX_LENGTH;
     bool isList = true;
     bool valid = false;
     while (type != TX_FEE) {
         do {
             buffer[bufferPos++] = *data++;
+            dataLength--;
         } while (!rlpCanDecode(buffer, bufferPos, &valid));
         if (!rlpDecodeLength(data - bufferPos,
                                 &fieldLength, &offset,
-                                &isList)) {
+                                &isList)
+                                || dataLength < fieldLength) {
             PRINTF("Invalid RLP Length\n");
-            THROW(0x6800);
+            THROW(0x6A80);
+        } else if (type != TX_LENGTH) {
+            dataLength -= fieldLength;
         }
         type++;
         switch (type) {
@@ -290,29 +308,17 @@ void parseTx(char *address, char *amount, char *fee, uint8_t *data) {
                 data++;
                 break;
             case TX_SENDER:
-                if (*data != ACCOUNT_ADDRESS_PREFIX) {
-                    PRINTF("Wrong type of sender: %d\n", *data);
-                    THROW(0x6A80);
-                }
-                data++;
-                data += 32;
+                readPublicKey(&data, senderPublicKey, fieldLength);
                 break;
-            case TX_RECIPENT:
-                if (*data != ACCOUNT_ADDRESS_PREFIX) {
-                    PRINTF("Wrong type of recipent: %d\n", *data);
-                    THROW(0x6A80);
-                }
-                data++;
-                os_memmove(publicKey, data, 32);
-                getAeAddressStringFromBinary(publicKey, address);
-                data += 32;
+            case TX_RECIPIENT:
+                readPublicKey(&data, recipientPublicKey, fieldLength);
+                getAeAddressStringFromBinary(recipientPublicKey, recipientAddress);
                 break;
             case TX_AMOUNT:
-                rlpParseInt(data, fieldLength, offset, amount);
-                data += fieldLength + offset - 1;
+                rlpParseInt(&data, fieldLength, offset, amount);
                 break;
             case TX_FEE:
-                rlpParseInt(data, fieldLength, offset, fee);
+                rlpParseInt(&data, fieldLength, offset, fee);
                 break;
         }
         bufferPos = 0;
