@@ -16,6 +16,8 @@ typedef enum rlpTxType {
 
 unsigned int ui_prepro(const bagl_element_t *element);
 
+void getPublicKeyArray(cx_ecfp_public_key_t *publicKey, uint8_t *publicKeyArray);
+
 void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address);
 
 uint32_t readUint32BE(uint8_t *buffer);

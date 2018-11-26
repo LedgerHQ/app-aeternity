@@ -83,6 +83,15 @@ void getAeAddressStringFromKey(cx_ecfp_public_key_t *publicKey, char *address) {
     getAeAddressStringFromBinary(buffer, address);
 }
 
+void getPublicKeyArray(cx_ecfp_public_key_t *publicKey, uint8_t *publicKeyArray) {
+    for (int i = 0; i < 32; i++) {
+        publicKeyArray[i] = publicKey->W[64 - i];
+    }
+    if ((publicKey->W[32] & 1) != 0) {
+        publicKeyArray[31] |= 0x80;
+    }
+}
+
 uint32_t readUint32BE(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
