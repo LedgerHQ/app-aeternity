@@ -20,29 +20,14 @@ $(error Environment variable BOLOS_SDK is not set)
 endif
 include $(BOLOS_SDK)/Makefile.defines
 
-APP_LOAD_PARAMS= --curve ed25519 $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS= --curve ed25519 --path "44'/457'" --appFlags 0x40 $(COMMON_LOAD_PARAMS)
 
 APPVERSION_M=0
 APPVERSION_N=1
 APPVERSION_P=1
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-APP_LOAD_FLAGS= --appFlags 0x40 --dep Aternity:$(APPVERSION)
-
-ifeq ($(CHAIN),)
-CHAIN=aternity
-endif
-
-ifeq ($(CHAIN),aternity)
-APP_LOAD_PARAMS += --path "44'/457'"
 APPNAME = "Aeternity"
-APP_LOAD_FLAGS=--appFlags 0x40
-else
-ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported CHAIN - use aternity)
-endif
-endif
 
-APP_LOAD_PARAMS += $(APP_LOAD_FLAGS)
 DEFINES += $(DEFINES_LIB)
 
 #prepare hsm generation
@@ -78,20 +63,6 @@ DEFINES   += CX_COMPLIANCE_141
 ##############
 #  Compiler  #
 ##############
-ifneq ($(BOLOS_ENV),)
-$(info BOLOS_ENV=$(BOLOS_ENV))
-CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
-GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
-else
-$(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
-endif
-ifeq ($(CLANGPATH),)
-$(info CLANGPATH is not set: clang will be used from PATH)
-endif
-ifeq ($(GCCPATH),)
-$(info GCCPATH is not set: arm-none-eabi-* will be used from PATH)
-endif
-
 CC       := $(CLANGPATH)clang
 
 #CFLAGS   += -O0
@@ -121,6 +92,3 @@ include $(BOLOS_SDK)/Makefile.rules
 
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
-
-listvariants:
-	@echo VARIANTS CHAIN aeternity
