@@ -8,7 +8,7 @@
 typedef enum rlpTxType {
     TX_TYPE = 0,
     TX_SENDER,
-    TX_RECIPENT,
+    TX_RECIPIENT,
     TX_AMOUNT,
     TX_FEE
 } rlpTxType;

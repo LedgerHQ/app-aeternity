@@ -297,9 +297,9 @@ void parseTx(char *address, char *amount, char *fee, uint8_t *data) {
                 data++;
                 data += 32;
                 break;
-            case TX_RECIPENT:
+            case TX_RECIPIENT:
                 if (*data != ACCOUNT_ADDRESS_PREFIX) {
-                    PRINTF("Wrong type of recipent: %d\n", *data);
+                    PRINTF("Wrong type of recipient: %d\n", *data);
                     THROW(0x6A80);
                 }
                 data++;
