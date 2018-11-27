@@ -36,4 +36,4 @@ python getAddress.py --acc 0
 ```
 
 ## Documentation
-This follows the specification available in the `api.asc`.
+This follows the specification available in the [`api.asc`](https://github.com/aeternity/ledger-app/blob/master/api.asc).
