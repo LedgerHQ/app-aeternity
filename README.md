@@ -17,27 +17,12 @@ make delete
 ```
 
 ## Load pre-compiled HEX file
-Install dependencies:
-```bash
-pip install ledgerblue
-```
-Load [latest release](https://github.com/aeternity/ledger-app/releases/latest) into device using `DATA_SIZE_OF_PRECOMPILED_HEX` and `VERSION` without `v`
-```bash
-python -m ledgerblue.loadApp                        \
-    --curve ed25519                                 \
-    --tlv                                           \
-    --targetId 0x31100003                           \
-    --delete --fileName app.hex                     \
-    --appName "Aeternity"                           \
-    --appVersion VERSION                            \
-    --dataSize DATA_SIZE_OF_PRECOMPILED_HEX         \
-    --path "44'/457'"                               \
-    --appFlags 0x840                                \
-    --icon 0100000000ffffff00ffffffffffffffffffffc7e393c9799c7d8679fc93c9c7e3ffffffffffffffff
-```
-Replace `VERSION` with the version of realese, for example `0.1.1`.
-
-Replace `DATA_SIZE_OF_PRECOMPILED_HEX` with the data size of the pre-compiled HEX file that is available in release.
+- Download and extract `tar.gz` file from the [latest release](https://github.com/aeternity/ledger-app/releases/latest)
+- Run the `load.sh` file
+- Allow unknown manager
+- Validate the app `Identifier` on the Ledger Nano S with the given `Application full hash` that is available in the release info
+- Confirm app installation on ledger
+- Enter PIN code
 
 ## Examples of Ledger wallet functionality
 Install dependencies:
@@ -51,4 +36,4 @@ python getAddress.py --acc 0
 ```
 
 ## Documentation
-This follows the specification available in the `api.asc`.
+This follows the specification available in the [`api.asc`](https://github.com/aeternity/ledger-app/blob/master/api.asc).
