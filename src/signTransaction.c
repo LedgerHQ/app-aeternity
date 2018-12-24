@@ -2,8 +2,8 @@
 #include "utils.h"
 
 static char recipientAddress[FULL_ADDRESS_LENGTH];
-static char fullAmount[50];
-static char fee[50];
+static char fullAmount[80];
+static char fee[80];
 static uint32_t accountNumber;
 static uint16_t dataLength;
 static uint8_t *data;

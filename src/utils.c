@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "menu.h"
+#include "uint256.h"
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
+#define MAX_INT256 32
 
 static const char BASE_58_ALPHABET[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                                         'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q',
@@ -236,33 +238,27 @@ static bool rlpDecodeLength(uint8_t *buffer, uint32_t *fieldLength, uint32_t *of
     return true;
 }
 
-static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
-    uint64_t amount = 0;
-    if (offset == 0) {
-        (*workBuffer)--;
-        amount = *(*workBuffer)++;
-    }
-    else{
-        *workBuffer += offset - 1;
-        for (uint8_t i = 0; i < fieldLength; i++) {
-            amount += *(*workBuffer)++ << (8 * (fieldLength - 1 - i));
-        }
-    }
-    if (amount == 0) {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return;
-    }
-    uint8_t digits;
-    uint64_t temp = amount;
-    //int nDigits = floor(log10(abs(amount))) + 1;
-    for (digits = 0; temp != 0; ++digits, temp /= 10 );
+static void convertUint256BE(uint8_t *data, uint32_t length, uint256_t *target) {
+    uint8_t tmp[32];
+    os_memset(tmp, 0, 32);
+    os_memmove(tmp + 32 - length, data, length);
+    readu256BE(tmp, target);
+}
 
-    for (uint8_t i = 0; amount != 0; ++i, amount /= 10 )
-    {
-        buffer[digits - 1 - i] = amount % 10 + '0';
+static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
+    if (fieldLength > MAX_INT256) {
+        PRINTF("Invalid length of tokens");
+        THROW(0x6A80);
     }
-    buffer[digits] = '\0';
+    if (offset != 0) {
+        *workBuffer += offset - 1;
+    } else {
+        (*workBuffer)--;
+    }
+    uint256_t uint256;
+    convertUint256BE(*workBuffer, fieldLength, &uint256);
+    tostring256(&uint256, 10, buffer, 80);
+    *workBuffer += fieldLength;
 }
 
 static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
