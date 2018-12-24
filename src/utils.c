@@ -9,6 +9,7 @@
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
 #define MAX_INT256 32
+#define DECIMALS 18
 
 static const char BASE_58_ALPHABET[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                                         'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q',
@@ -245,6 +246,70 @@ static void convertUint256BE(uint8_t *data, uint32_t length, uint256_t *target) 
     readu256BE(tmp, target);
 }
 
+static bool adjustDecimals(char *src, uint32_t srcLength, char *target,
+                    uint32_t targetLength, uint8_t decimals) {
+    uint32_t startOffset;
+    uint32_t lastZeroOffset = 0;
+    uint32_t offset = 0;
+    if ((srcLength == 1) && (*src == '0')) {
+        if (targetLength < 2) {
+                return false;
+        }
+        target[0] = '0';
+        target[1] = '\0';
+        return true;
+    }
+    if (srcLength <= decimals) {
+        uint32_t delta = decimals - srcLength;
+        if (targetLength < srcLength + 1 + 2 + delta) {
+            return false;
+        }
+        target[offset++] = '0';
+        target[offset++] = '.';
+        for (uint32_t i = 0; i < delta; i++) {
+            target[offset++] = '0';
+        }
+        startOffset = offset;
+        for (uint32_t i = 0; i < srcLength; i++) {
+            target[offset++] = src[i];
+        }
+        target[offset] = '\0';
+    } else {
+        uint32_t sourceOffset = 0;
+        uint32_t delta = srcLength - decimals;
+        if (targetLength < srcLength + 1 + 1) {
+            return false;
+        }
+        while (offset < delta) {
+            target[offset++] = src[sourceOffset++];
+        }
+        if (decimals != 0) {
+            target[offset++] = '.';
+        }
+        startOffset = offset;
+        while (sourceOffset < srcLength) {
+            target[offset++] = src[sourceOffset++];
+        }
+	target[offset] = '\0';
+    }
+    for (uint32_t i = startOffset; i < offset; i++) {
+        if (target[i] == '0') {
+            if (lastZeroOffset == 0) {
+                lastZeroOffset = i;
+            }
+        } else {
+            lastZeroOffset = 0;
+        }
+    }
+    if (lastZeroOffset != 0) {
+        target[lastZeroOffset] = '\0';
+        if (target[lastZeroOffset - 1] == '.') {
+                target[lastZeroOffset - 1] = '\0';
+        }
+    }
+    return true;
+}
+
 static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t offset, char *buffer) {
     if (fieldLength > MAX_INT256) {
         PRINTF("Invalid length of tokens");
@@ -256,8 +321,10 @@ static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t off
         (*workBuffer)--;
     }
     uint256_t uint256;
+    char tmp[80];
     convertUint256BE(*workBuffer, fieldLength, &uint256);
-    tostring256(&uint256, 10, buffer, 80);
+    tostring256(&uint256, 10, tmp, 80);
+    adjustDecimals(tmp, strlen(tmp), buffer, 80, DECIMALS);
     *workBuffer += fieldLength;
 }
 
