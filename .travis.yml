@@ -16,7 +16,7 @@ cache:
 env:
   global:
     - BOLOS_ENV=$TRAVIS_BUILD_DIR/devenv
-    - BOLOS_SDK=$TRAVIS_BUILD_DIR/devenv/nanos-secure-sdk-nanos-1421
+    - BOLOS_SDK=$TRAVIS_BUILD_DIR/devenv/nanos-secure-sdk-f9e1c7b8904df2eee0ae7e603f552b876c169334
 
 install:
   - sudo apt-get install libusb-1.0-0-dev libudev-dev

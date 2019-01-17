@@ -110,7 +110,7 @@ void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey) {
 
     os_memmove(bip32Path, derivePath, sizeof(derivePath));
     bip32Path[2] = accountNumber | HARDENED_OFFSET;
-    os_perso_derive_node_bip32(CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL);
+    os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL, NULL, 0);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
 }
