@@ -133,6 +133,8 @@ void sample_main(void) {
                     THROW(0x6982);
                 }
 
+                PRINTF("New APDU received:\n%.*H\n", rx, G_io_apdu_buffer);
+
                 handleApdu(&flags, &tx);
             }
             CATCH(EXCEPTION_IO_RESET) {
@@ -205,14 +207,16 @@ unsigned char io_event(unsigned char channel) {
         case SEPROXYHAL_TAG_TICKER_EVENT:
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer,
             {
-            if (UX_ALLOWED) {
-                if (ux_step_count) {
-                // prepare next screen
-                ux_step = (ux_step + 1) % ux_step_count;
-                // redisplay screen
-                UX_REDISPLAY();
+            #ifndef TARGET_NANOX
+                if (UX_ALLOWED) {
+                    if (ux_step_count) {
+                    // prepare next screen
+                    ux_step = (ux_step+1)%ux_step_count;
+                    // redisplay screen
+                    UX_REDISPLAY();
+                    }
                 }
-            }
+            #endif // TARGET_NANOX
             });
             break;
     }
@@ -267,6 +271,11 @@ __attribute__((section(".boot"))) int main(int arg0) {
                 USB_power(1);
 
                 ui_idle();
+
+#ifdef HAVE_BLE
+                BLE_power(0, NULL);
+                BLE_power(1, "Nano X");
+#endif // HAVE_BLE
 
                 sample_main();
             }

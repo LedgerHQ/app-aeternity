@@ -66,8 +66,8 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     uint8_t hashAddress[32];
 
     os_memmove(buffer, publicKey, 32);
-    cx_hash_sha256(buffer, 32, hashAddress);
-    cx_hash_sha256(hashAddress, 32, hashAddress);
+    cx_hash_sha256(buffer, 32, hashAddress, 32);
+    cx_hash_sha256(hashAddress, 32, hashAddress, 32);
     os_memmove(buffer + 32, hashAddress, 4);
 
     snprintf(address, sizeof(address), "ak_");
@@ -110,6 +110,8 @@ void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey) {
 
     os_memmove(bip32Path, derivePath, sizeof(derivePath));
     bip32Path[2] = accountNumber | HARDENED_OFFSET;
+    PRINTF("BIP32: %.*H\n", BIP32_PATH, bip32Path);
+    PRINTF("BIP32: %.*H\n", BIP32_PATH, bip32Path);
     os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL, NULL, 0);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
@@ -124,7 +126,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *o
     cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512,
                          data,
                          dataLength,
-                         NULL, 0, signature, &info);
+                         NULL, 0, signature, 64, &info);
     os_memset(&privateKey, 0, sizeof(privateKey));
     os_memmove(out, signature, 64);
 }
