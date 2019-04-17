@@ -340,7 +340,7 @@ static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLeng
     *data += 32;
 }
 
-void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength) {
+void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength) {
     uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
@@ -349,7 +349,7 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
     rlpTxType type = TX_LENGTH;
     bool isList = true;
     bool valid = false;
-    while (type != TX_FEE) {
+    while (type != TX_PAYLOAD) {
         do {
             buffer[bufferPos++] = *data++;
             dataLength--;
@@ -360,7 +360,7 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
                                 || dataLength < fieldLength) {
             PRINTF("Invalid RLP Length\n");
             THROW(0x6A80);
-        } else if (type != TX_LENGTH) {
+        } else if (type != TX_LENGTH && fieldLength != 1) {
             dataLength -= fieldLength;
         }
         type++;
@@ -384,6 +384,20 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
                 break;
             case TX_FEE:
                 rlpParseInt(&data, fieldLength, offset, fee);
+                break;
+            case TX_TTL:
+            case TX_NONCE:
+                if (offset != 0) {
+                    data += offset - 1 + fieldLength;
+                }
+                break;
+            case TX_PAYLOAD:
+                if (offset != 0) {
+                    data += offset - 1;
+                } else {
+                    data--;
+                }
+                snprintf(payload, 80, "%.*s", fieldLength, data);
                 break;
         }
         bufferPos = 0;
