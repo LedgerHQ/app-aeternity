@@ -1,6 +1,7 @@
 #include "signTransaction.h"
 #include "os.h"
 #include "utils.h"
+#include "blake2b.h"
 
 static char recipientAddress[FULL_ADDRESS_LENGTH];
 static char fullAmount[80];
@@ -9,6 +10,7 @@ static char payload[80];
 static uint32_t accountNumber;
 static uint16_t dataLength;
 static uint8_t *data;
+static uint8_t networkIdLength;
 
 static void io_seproxyhal_touch_signTx_ok(const bagl_element_t *e) {
     sign(accountNumber, data, dataLength, G_io_apdu_buffer);
@@ -32,13 +34,17 @@ static const bagl_element_t ui_approval_nanos[] = {
 };
 
 static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    uint8_t dataToSign[networkIdLength + 32];
+
     switch(button_mask) {
         case BUTTON_EVT_RELEASED|BUTTON_LEFT:
             sendResponse(0, false);
             break;
 
         case BUTTON_EVT_RELEASED|BUTTON_RIGHT:
-            sign(accountNumber, data, dataLength, G_io_apdu_buffer);
+            blake2b(dataToSign + networkIdLength, 32, data + networkIdLength, dataLength - networkIdLength);
+            os_memmove(dataToSign, data, networkIdLength);
+            sign(accountNumber, dataToSign, networkIdLength + 32, G_io_apdu_buffer);
             sendResponse(64, true);
             break;
     }
@@ -126,7 +132,7 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
     accountNumber = readUint32BE(workBuffer);
     workBuffer += 4;
     workBufferLength -= 4;
-    const uint8_t networkIdLength = *(workBuffer++);
+    networkIdLength = *(workBuffer++);
     workBufferLength--;
     dataLength = workBufferLength;
     data = workBuffer;
