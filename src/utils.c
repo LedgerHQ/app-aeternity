@@ -340,13 +340,14 @@ static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLeng
     *data += 32;
 }
 
-void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength) {
+void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType) {
     uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
     uint32_t fieldLength;
     uint32_t offset = 0;
     rlpTxType type = TX_LENGTH;
+    bool validLength = true;
     bool isList = true;
     bool valid = false;
     while (type != TX_PAYLOAD) {
@@ -356,19 +357,32 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
         } while (!rlpCanDecode(buffer, bufferPos, &valid));
         if (!rlpDecodeLength(data - bufferPos,
                                 &fieldLength, &offset,
-                                &isList)
-                                || dataLength < fieldLength) {
+                                &isList)) {
             PRINTF("Invalid RLP Length\n");
             THROW(0x6A80);
         } else if (type != TX_LENGTH && fieldLength != 1) {
+            validLength &= dataLength > fieldLength;
             dataLength -= fieldLength;
+        } else if (!valid || bufferPos == sizeof(buffer)) {
+            PRINTF("RLP pre-decode error\n");
+            THROW(0x6A80);
+        }
+        if (type == TX_LENGTH) {
+            *remainLength = data[-1] + bufferPos;
+            if (*remainLength - bufferPos < dataLength || !isList) {
+                PRINTF("Invalid RLP Length\n");
+                THROW(0x6A80);
+            }
         }
         type++;
+        if (type != TX_TYPE && !validLength) {
+            THROW(0x6A80);
+        }
         switch (type) {
             case TX_TYPE:
-                if (*data++ != SPEND_TRANSACTION_PREFIX) {
-                    PRINTF("Wrong type of transaction\n");
-                    THROW(0x6A80);
+                *transactionType = *data++ != SPEND_TRANSACTION_PREFIX ? TX_OTHER : TX_SPEND;
+                if (*transactionType == TX_OTHER) {
+                    return;
                 }
                 data++;
                 break;
