@@ -8,6 +8,7 @@
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
+#define ACCOUNT_NAMEHASH_PREFIX 2
 #define MAX_INT256 32
 #define DECIMALS 18
 
@@ -61,7 +62,7 @@ static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+static void getAeEncodedString (uint8_t *publicKey, char *address, char *prefix) {
     uint8_t buffer[36];
     uint8_t hashAddress[32];
 
@@ -70,8 +71,12 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     cx_hash_sha256(hashAddress, 32, hashAddress, 32);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    snprintf(address, sizeof(address), "ak_");
+    snprintf(address, sizeof(address), prefix);
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
+}
+
+void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+    getAeEncodedString(publicKey, address, "ak_");
 }
 
 void getPublicKey(uint32_t accountNumber, uint8_t *publicKeyArray) {
@@ -330,8 +335,8 @@ static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t off
     *workBuffer += fieldLength;
 }
 
-static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
-    if (**data != ACCOUNT_ADDRESS_PREFIX || fieldLength != 33) {
+static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
+    if (**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX || fieldLength != 33) {
         PRINTF("Wrong type of publicKey or publicKey length: %d %d\n", **data, fieldLength);
         THROW(0x6A80);
     }
@@ -350,6 +355,7 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
     bool validLength = true;
     bool isList = true;
     bool valid = false;
+    bool isAddress;
     while (type != TX_PAYLOAD) {
         do {
             buffer[bufferPos++] = *data++;
@@ -387,11 +393,12 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
                 data++;
                 break;
             case TX_SENDER:
-                readPublicKey(&data, senderPublicKey, fieldLength);
+                readRecipient(&data, senderPublicKey, fieldLength);
                 break;
             case TX_RECIPIENT:
-                readPublicKey(&data, recipientPublicKey, fieldLength);
-                getAeAddressStringFromBinary(recipientPublicKey, recipientAddress);
+                isAddress = (*data == ACCOUNT_ADDRESS_PREFIX);
+                readRecipient(&data, recipientPublicKey, fieldLength);
+                getAeEncodedString(recipientPublicKey, recipientAddress, isAddress? "ak_": "nm_");
                 break;
             case TX_AMOUNT:
                 rlpParseInt(&data, fieldLength, offset, amount);
