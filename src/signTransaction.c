@@ -8,12 +8,9 @@ static char fullAmount[80];
 static char fee[80];
 static char payload[80];
 static uint32_t accountNumber;
-static uint16_t dataLength;
 static uint32_t remainTransactionLength;
-static uint8_t *data;
 static char networkId[32];
 cx_blake2b_t hash;
-static bool isSpend;
 static txType transactionType;
 
 static void singAndSend() {
@@ -126,8 +123,6 @@ UX_FLOW(ux_confirm_full_flow,
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBufferLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
-    uint8_t senderPublicKey[32];
-    uint8_t publicKey[32];
     uint8_t networkIdLength;
 
     if (p1 == P1_FIRST) {
@@ -141,17 +136,16 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
         workBufferLength--;
         workBuffer += networkIdLength;
         workBufferLength -= networkIdLength;
+        uint8_t senderPublicKey[32];
         parseTx(senderPublicKey, recipientAddress, fullAmount, fee, payload, workBuffer, workBufferLength, &remainTransactionLength, &transactionType);
     }
     else if (p1 != P1_MORE) {
         THROW(0x6B00);
     }
 
-    dataLength = workBufferLength;
-    data = workBuffer;
-    blake2b_update(&hash, data, dataLength);
+    blake2b_update(&hash, workBuffer, workBufferLength);
 
-    remainTransactionLength -= dataLength;
+    remainTransactionLength -= workBufferLength;
     if (remainTransactionLength < 0) {
         PRINTF("Extra data passed\n");
         THROW(0x6A80);
