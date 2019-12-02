@@ -63,16 +63,16 @@ static unsigned int ui_approval_signMessage_nanos_button(unsigned int button_mas
 
 //////////////////////////////////////////////////////////////////////
 UX_STEP_NOCB(
-    ux_sign_flow_1_step, 
-    pnn, 
+    ux_sign_flow_1_step,
+    pnn,
     {
       &C_icon_certificate,
       "Sign",
       "message",
     });
 UX_STEP_NOCB(
-    ux_sign_flow_2_step, 
-    bnnn_paging, 
+    ux_sign_flow_2_step,
+    bnnn_paging,
     {
       .title = "Message",
       .text = message,

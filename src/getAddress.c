@@ -40,23 +40,23 @@ static unsigned int ui_address_nanos_button(unsigned int button_mask, unsigned i
 //////////////////////////////////////////////////////////////////////
 
 UX_STEP_NOCB(
-    ux_display_public_flow_5_step, 
-    bnnn_paging, 
+    ux_display_public_flow_5_step,
+    bnnn_paging,
     {
       .title = "Address",
       .text = address,
     });
 UX_STEP_VALID(
-    ux_display_public_flow_6_step, 
-    pb, 
+    ux_display_public_flow_6_step,
+    pb,
     sendResponse(set_result_get_address(), true),
     {
       &C_icon_validate_14,
       "Approve",
     });
 UX_STEP_VALID(
-    ux_display_public_flow_7_step, 
-    pb, 
+    ux_display_public_flow_7_step,
+    pb,
     sendResponse(0, false),
     {
       &C_icon_crossmark,
