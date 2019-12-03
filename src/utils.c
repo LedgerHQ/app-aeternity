@@ -341,11 +341,11 @@ static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLeng
         THROW(0x6A80);
     }
     (*data)++;
-    os_memmove(publicKey, *data, 32);
+    if (publicKey != NULL) os_memmove(publicKey, *data, 32);
     *data += 32;
 }
 
-void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType) {
+void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType) {
     uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
@@ -393,7 +393,7 @@ void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *
                 data++;
                 break;
             case TX_SENDER:
-                readRecipient(&data, senderPublicKey, fieldLength);
+                readRecipient(&data, NULL, fieldLength);
                 break;
             case TX_RECIPIENT:
                 isAddress = (*data == ACCOUNT_ADDRESS_PREFIX);
