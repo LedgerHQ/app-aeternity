@@ -361,7 +361,7 @@ void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uin
         } while (bufferPos < 5 && !rlpCanDecode(buffer, bufferPos, &valid));
         if (bufferPos >= 5) {   // reject malformed data, the parsing of which could overwrite stack
             PRINTF("Invalid Tx encoding");
-            THROW(INVALID_PARAM);
+            THROW(INVALID_PARAMETER);
         }
 
         if (!rlpDecodeLength(data - bufferPos,
