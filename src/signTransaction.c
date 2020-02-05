@@ -85,7 +85,7 @@ UX_STEP_NOCB(
       .title = "Fees",
       .text = fee,
     });
-UX_STEP_VALID(
+UX_STEP_NOCB(
     ux_confirm_full_flow_5_step,
     bnnn_paging,
     {
