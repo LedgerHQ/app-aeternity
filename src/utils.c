@@ -8,6 +8,7 @@
 
 #define SPEND_TRANSACTION_PREFIX 12
 #define ACCOUNT_ADDRESS_PREFIX 1
+#define ACCOUNT_NAMEHASH_PREFIX 2
 #define MAX_INT256 32
 #define DECIMALS 18
 
@@ -61,7 +62,7 @@ static unsigned char encodeBase58(unsigned char WIDE *in, unsigned char length,
     return length;
 }
 
-void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+static void getAeEncodedString (uint8_t *publicKey, char *address, char *prefix) {
     uint8_t buffer[36];
     uint8_t hashAddress[32];
 
@@ -70,8 +71,12 @@ void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
     cx_hash_sha256(hashAddress, 32, hashAddress, 32);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    snprintf(address, sizeof(address), "ak_");
+    snprintf(address, sizeof(address), prefix);
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
+}
+
+void getAeAddressStringFromBinary(uint8_t *publicKey, char *address) {
+    getAeEncodedString(publicKey, address, "ak_");
 }
 
 void getPublicKey(uint32_t accountNumber, uint8_t *publicKeyArray) {
@@ -110,8 +115,6 @@ void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey) {
 
     os_memmove(bip32Path, derivePath, sizeof(derivePath));
     bip32Path[2] = accountNumber | HARDENED_OFFSET;
-    PRINTF("BIP32: %.*H\n", BIP32_PATH, bip32Path);
-    PRINTF("BIP32: %.*H\n", BIP32_PATH, bip32Path);
     os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL, NULL, 0);
     cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, privateKey);
     os_memset(privateKeyData, 0, sizeof(privateKeyData));
@@ -330,60 +333,90 @@ static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t off
     *workBuffer += fieldLength;
 }
 
-static void readPublicKey(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
-    if (**data != ACCOUNT_ADDRESS_PREFIX || fieldLength != 33) {
+static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
+    if (**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX || fieldLength != 33) {
         PRINTF("Wrong type of publicKey or publicKey length: %d %d\n", **data, fieldLength);
         THROW(0x6A80);
     }
     (*data)++;
-    os_memmove(publicKey, *data, 32);
+    if (publicKey != NULL) os_memmove(publicKey, *data, 32);
     *data += 32;
 }
 
-void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength) {
+void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType) {
     uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
     uint32_t fieldLength;
     uint32_t offset = 0;
     rlpTxType type = TX_LENGTH;
+    bool validLength = true;
     bool isList = true;
     bool valid = false;
-    while (type != TX_FEE) {
+    bool isAddress;
+    while (type != TX_PAYLOAD) {
         do {
             buffer[bufferPos++] = *data++;
             dataLength--;
         } while (!rlpCanDecode(buffer, bufferPos, &valid));
         if (!rlpDecodeLength(data - bufferPos,
                                 &fieldLength, &offset,
-                                &isList)
-                                || dataLength < fieldLength) {
+                                &isList)) {
             PRINTF("Invalid RLP Length\n");
             THROW(0x6A80);
-        } else if (type != TX_LENGTH) {
+        } else if (type != TX_LENGTH && fieldLength != 1) {
+            validLength &= dataLength > fieldLength;
             dataLength -= fieldLength;
+        } else if (!valid || bufferPos == sizeof(buffer)) {
+            PRINTF("RLP pre-decode error\n");
+            THROW(0x6A80);
+        }
+        if (type == TX_LENGTH) {
+            *remainLength = data[-1] + bufferPos;
+            if (*remainLength - bufferPos < dataLength || !isList) {
+                PRINTF("Invalid RLP Length\n");
+                THROW(0x6A80);
+            }
         }
         type++;
+        if (type != TX_TYPE && !validLength) {
+            THROW(0x6A80);
+        }
         switch (type) {
             case TX_TYPE:
-                if (*data++ != SPEND_TRANSACTION_PREFIX) {
-                    PRINTF("Wrong type of transaction\n");
-                    THROW(0x6A80);
+                *transactionType = *data++ != SPEND_TRANSACTION_PREFIX ? TX_OTHER : TX_SPEND;
+                if (*transactionType == TX_OTHER) {
+                    return;
                 }
                 data++;
                 break;
             case TX_SENDER:
-                readPublicKey(&data, senderPublicKey, fieldLength);
+                readRecipient(&data, NULL, fieldLength);
                 break;
             case TX_RECIPIENT:
-                readPublicKey(&data, recipientPublicKey, fieldLength);
-                getAeAddressStringFromBinary(recipientPublicKey, recipientAddress);
+                isAddress = (*data == ACCOUNT_ADDRESS_PREFIX);
+                readRecipient(&data, recipientPublicKey, fieldLength);
+                getAeEncodedString(recipientPublicKey, recipientAddress, isAddress? "ak_": "nm_");
                 break;
             case TX_AMOUNT:
                 rlpParseInt(&data, fieldLength, offset, amount);
                 break;
             case TX_FEE:
                 rlpParseInt(&data, fieldLength, offset, fee);
+                break;
+            case TX_TTL:
+            case TX_NONCE:
+                if (offset != 0) {
+                    data += offset - 1 + fieldLength;
+                }
+                break;
+            case TX_PAYLOAD:
+                if (offset != 0) {
+                    data += offset - 1;
+                } else {
+                    data--;
+                }
+                snprintf(payload, 80, "%.*s", fieldLength, data);
                 break;
         }
         bufferPos = 0;

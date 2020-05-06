@@ -11,8 +11,16 @@ typedef enum rlpTxType {
     TX_SENDER,
     TX_RECIPIENT,
     TX_AMOUNT,
-    TX_FEE
+    TX_FEE,
+    TX_TTL,
+    TX_NONCE,
+    TX_PAYLOAD
 } rlpTxType;
+
+typedef enum txType {
+    TX_SPEND = 0,
+    TX_OTHER
+} txType;
 
 unsigned int ui_prepro(const bagl_element_t *element);
 
@@ -26,7 +34,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *s
 
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 
-void parseTx(char *senderPublicKey, char *recipientAddress, char *amount, char *fee, uint8_t *data, uint16_t dataLength);
+void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType);
 
 void sendResponse(uint8_t tx, bool approve);
 

@@ -186,8 +186,8 @@ void settings_submenu_selector(unsigned int idx) {
 
 //////////////////////////////////////////////////////////////////////
 UX_STEP_NOCB(
-    ux_idle_flow_1_step, 
-    nn, 
+    ux_idle_flow_1_step,
+    nn,
     {
       "Application",
       "is ready",
@@ -201,8 +201,8 @@ UX_STEP_VALID(
       "Settings",
     });
 UX_STEP_NOCB(
-    ux_idle_flow_3_step, 
-    bn, 
+    ux_idle_flow_3_step,
+    bn,
     {
       "Version",
       APPVERSION,
