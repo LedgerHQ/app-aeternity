@@ -267,6 +267,11 @@ __attribute__((section(".boot"))) int main(int arg0) {
                 dataAllowed = N_storage.dataAllowed;
                 contractDetails = N_storage.contractDetails;
 
+#ifdef TARGET_NANOX
+                // grab the current plane mode setting
+                G_io_app.plane_mode = os_setting_get(OS_SETTING_PLANEMODE, NULL, 0);
+#endif // TARGET_NANOX
+
                 USB_power(0);
                 USB_power(1);
 
