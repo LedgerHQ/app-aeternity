@@ -130,6 +130,9 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
         accountNumber = readUint32BE(workBuffer);
         workBuffer += 4;
         workBufferLength -= 4;
+        remainTransactionLength = readUint32BE(workBuffer);
+        workBuffer += 4;
+        workBufferLength -= 4;
         const uint8_t networkIdLength = *(workBuffer++);
         if (networkIdLength > NETWORK_ID_MAX_LENGTH) {
             PRINTF("Network id is to long\n");
@@ -140,7 +143,7 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
         workBufferLength--;
         workBuffer += networkIdLength;
         workBufferLength -= networkIdLength;
-        parseTx(recipientAddress, fullAmount, fee, payload, workBuffer, workBufferLength, &remainTransactionLength, &transactionType);
+        parseTx(recipientAddress, fullAmount, fee, payload, workBuffer, workBufferLength, remainTransactionLength, &transactionType);
     }
     else if (p1 != P1_MORE) {
         THROW(0x6B00);

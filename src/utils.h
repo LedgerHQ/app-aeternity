@@ -34,7 +34,7 @@ void sign(uint32_t accountNumber, uint8_t *data, uint32_t dataLength, uint8_t *s
 
 void getPrivateKey(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
 
-void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType);
+void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t remainLength, txType *transactionType);
 
 void sendResponse(uint8_t tx, bool approve);
 
