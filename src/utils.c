@@ -343,7 +343,7 @@ static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLeng
     *data += 32;
 }
 
-void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t *remainLength, txType *transactionType) {
+void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uint8_t *data, uint16_t dataLength, uint32_t remainLength, txType *transactionType) {
     uint8_t recipientPublicKey[32];
     uint8_t buffer[5];
     uint8_t bufferPos = 0;
@@ -372,8 +372,7 @@ void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uin
             THROW(0x6A80);
         }
         if (type == TX_LENGTH) {
-            *remainLength = data[-1] + bufferPos;
-            if (*remainLength - bufferPos < dataLength || !isList) {
+            if (remainLength - bufferPos < dataLength || !isList) {
                 PRINTF("Invalid RLP Length\n");
                 THROW(0x6A80);
             }
