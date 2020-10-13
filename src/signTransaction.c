@@ -24,36 +24,6 @@ static void singAndSend() {
     sendResponse(64, true);
 }
 
-#if defined(TARGET_NANOS)
-
-static const bagl_element_t ui_approval_nanos[] = {
-    UI_BUTTONS,
-    UI_LABELINE(0x01, "Confirm",        UI_FIRST,  BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x01, "transaction",    UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 0),
-    UI_LABELINE(0x02, "Amount",         UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x02, fullAmount,       UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
-    UI_LABELINE(0x03, "Address",        UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x03, recipientAddress, UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 50),
-    UI_LABELINE(0x04, "Fees",           UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x04, fee,              UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
-    UI_LABELINE(0x05, "Payload",        UI_FIRST,  BAGL_FONT_OPEN_SANS_REGULAR_11px,   0),
-    UI_LABELINE(0x05, payload,          UI_SECOND, BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 26),
-};
-
-static unsigned int ui_approval_nanos_button(unsigned int button_mask, unsigned int button_mask_counter) {
-    switch(button_mask) {
-        case BUTTON_EVT_RELEASED|BUTTON_LEFT:
-            sendResponse(0, false);
-            break;
-
-        case BUTTON_EVT_RELEASED|BUTTON_RIGHT:
-            singAndSend();
-            break;
-    }
-    return 0;
-}
-
-#elif defined(TARGET_NANOX)
 
 //////////////////////////////////////////////////////////////////////
 
@@ -120,7 +90,6 @@ UX_FLOW(ux_confirm_full_flow,
   &ux_confirm_full_flow_7_step
 );
 
-#endif
 
 void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBufferLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(tx);
@@ -160,13 +129,6 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *workBuffer, uint16_t workBuffer
         THROW(0x9000);
     }
 
-#if defined(TARGET_NANOS)
-    ux_step = 0;
-    ux_step_count = transactionType == TX_SPEND ? 5 : 1;
-    UX_DISPLAY(ui_approval_nanos, ui_prepro);
-#elif defined(TARGET_NANOX)
     ux_flow_init(0, ux_confirm_full_flow, NULL);
-#endif
-
     *flags |= IO_ASYNCH_REPLY;
 }
