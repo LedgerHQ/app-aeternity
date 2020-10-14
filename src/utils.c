@@ -335,7 +335,7 @@ static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t off
 }
 
 static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
-    if (**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX || fieldLength != 33) {
+    if ((**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX) || fieldLength != 33) {
         PRINTF("Wrong type of publicKey or publicKey length: %d %d\n", **data, fieldLength);
         THROW(0x6A80);
     }
