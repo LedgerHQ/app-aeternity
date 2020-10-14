@@ -415,7 +415,13 @@ void parseTx(char *recipientAddress, char *amount, char *fee, char *payload, uin
                 } else {
                     data--;
                 }
-                snprintf(payload, 80, "%.*s", fieldLength, data);
+
+                if (fieldLength) {
+                    snprintf(payload, 80, "%.*s", fieldLength, data);
+                } else {  // workaround for Nano X bug
+                    sprintf(payload, " ");
+                }
+
                 break;
         }
         bufferPos = 0;
