@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "os.h"
 #include "cx.h"
 #include <stdbool.h>
@@ -71,7 +72,7 @@ static void getAeEncodedString (uint8_t *publicKey, char *address, char *prefix)
     cx_hash_sha256(hashAddress, 32, hashAddress, 32);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    snprintf(address, sizeof(address), prefix);
+    snprintf(address, sizeof(address), "%s", prefix);
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
 }
 
@@ -334,7 +335,7 @@ static void rlpParseInt(uint8_t **workBuffer, uint32_t fieldLength, uint32_t off
 }
 
 static void readRecipient(uint8_t **data, uint8_t *publicKey, uint32_t fieldLength) {
-    if (**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX || fieldLength != 33) {
+    if ((**data != ACCOUNT_ADDRESS_PREFIX && **data != ACCOUNT_NAMEHASH_PREFIX) || fieldLength != 33) {
         PRINTF("Wrong type of publicKey or publicKey length: %d %d\n", **data, fieldLength);
         THROW(0x6A80);
     }
