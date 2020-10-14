@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "os.h"
 #include "cx.h"
 #include <stdbool.h>
