@@ -72,7 +72,7 @@ static void getAeEncodedString (uint8_t *publicKey, char *address, char *prefix)
     cx_hash_sha256(hashAddress, 32, hashAddress, 32);
     os_memmove(buffer + 32, hashAddress, 4);
 
-    snprintf(address, sizeof(address), prefix);
+    snprintf(address, sizeof(address), "%s", prefix);
     address[encodeBase58(buffer, 36, (unsigned char*)address + 3, 51) + 3] = '\0';
 }
 
