@@ -2,7 +2,7 @@
 set -e
 
 if [ -d clang-arm-fropi -a -d gcc-arm-none-eabi-5_3-2016q1 -a -d nanos-secure-sdk-f9e1c7b8904df2eee0ae7e603f552b876c169334 ]; then
-    echo "Devend is already prepared. Exiting."
+    echo "Devenv is already prepared. Exiting."
     exit
 fi
 
