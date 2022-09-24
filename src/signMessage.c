@@ -1,6 +1,7 @@
 #include "signMessage.h"
 #include "os.h"
 #include "utils.h"
+#include "blake2b.h"
 
 static char message[0xFC];
 static uint32_t accountNumber;
@@ -26,12 +27,10 @@ static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) 
     os_memmove(message + messageLength, data, dataLength);
     messageLength += dataLength;
 
-    sign(
-        accountNumber,
-        message,
-        messageLength,
-        G_io_apdu_buffer
-    );
+    uint8_t hash[32];
+    blake2b(&hash, 32, message, messageLength);
+
+    sign(accountNumber, hash, 32, G_io_apdu_buffer);
     sendResponse(64, true);
     return 0; // do not redraw the widget
 }

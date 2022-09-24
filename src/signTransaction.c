@@ -11,7 +11,7 @@ static char payload[80];
 static uint32_t accountNumber;
 static uint32_t remainTransactionLength;
 static char networkId[NETWORK_ID_MAX_LENGTH + 1];
-cx_blake2b_t hash;
+static cx_blake2b_t hash;
 static txType transactionType;
 
 static void singAndSend() {
