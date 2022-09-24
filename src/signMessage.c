@@ -7,7 +7,7 @@ static uint32_t accountNumber;
 static uint8_t *data;
 static uint32_t dataLength;
 
-static const char SIGN_MAGIC[] = "æternity Signed Message:\n";
+static const char SIGN_MAGIC[] = "aeternity Signed Message:\n";
 
 static unsigned int io_seproxyhal_touch_signMessage_ok(const bagl_element_t *e) {
     uint8_t message[0xFC + sizeof(SIGN_MAGIC) - 1 + 2];
