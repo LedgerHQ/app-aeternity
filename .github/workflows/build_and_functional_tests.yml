@@ -10,7 +10,9 @@ name: Build and run functional tests using ragger through reusable workflow
 # tooling environment is meant to be easy to use and adapt after forking your application
 
 permissions:
-  contents: read
+  contents: write
+  actions: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
